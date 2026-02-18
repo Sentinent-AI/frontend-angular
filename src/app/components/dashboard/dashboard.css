@@ -13,6 +13,17 @@ header {
   padding-bottom: 20px;
 }
 
+nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.workspace-card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
 .logout-btn {
   background-color: #f44336;
   color: white;
