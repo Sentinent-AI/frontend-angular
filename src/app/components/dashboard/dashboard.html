@@ -11,15 +11,13 @@
     </div>
 
     <div class="workspace-list">
-      <a *ngFor="let ws of workspaces" [routerLink]="['/workspaces', ws.id]" class="workspace-card-link">
-        <div class="workspace-card">
-          <h3>{{ ws.name }}</h3>
-          <p>{{ ws.description }}</p>
-          <small>Created: {{ ws.createdDate | date }}</small>
-        </div>
-      </a>
+      <div *ngFor="let ws of workspaces" class="workspace-card">
+        <h3>{{ ws.name }}</h3>
+        <p>{{ ws.description }}</p>
+        <small>Created: {{ ws.createdDate | date }}</small>
+      </div>
     </div>
-
+    
     <div *ngIf="workspaces.length === 0" class="empty-state">
       <p>No workspaces found. Create one to get started!</p>
     </div>
