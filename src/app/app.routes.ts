@@ -17,5 +17,25 @@ export const routes: Routes = [
     component: CreateWorkspace,
     canActivate: [authGuard]
   },
+  {
+    path: 'workspaces/:id',
+    loadComponent: () => import('./components/workspace/workspace-details/workspace-details').then(m => m.WorkspaceDetailsComponent),
+    canActivate: [authGuard],
+    children: [
+      {
+        path: 'decisions',
+        loadComponent: () => import('./components/decision-list/decision-list.component').then(m => m.DecisionListComponent)
+      },
+      {
+        path: 'decisions/new',
+        loadComponent: () => import('./components/decision-form/decision-form.component').then(m => m.DecisionFormComponent)
+      },
+      {
+        path: 'decisions/:decisionId/edit',
+        loadComponent: () => import('./components/decision-form/decision-form.component').then(m => m.DecisionFormComponent)
+      },
+      { path: '', redirectTo: 'decisions', pathMatch: 'full' }
+    ]
+  },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
 ];
