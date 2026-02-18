@@ -34,10 +34,6 @@ export class WorkspaceService {
         return of(this.mockWorkspaces);
     }
 
-    getWorkspace(id: string): Observable<Workspace | undefined> {
-        return of(this.mockWorkspaces.find(w => w.id === id));
-    }
-
     createWorkspace(name: string): Observable<Workspace> {
         const newWorkspace: Workspace = {
             id: Math.random().toString(36).substring(7),
