@@ -1,0 +1,26 @@
+<div class="create-workspace-container">
+  <h2>Create Workspace</h2>
+  <p>Set up a workspace to organize your decisions.</p>
+
+  <form (ngSubmit)="onSubmit()" #workspaceForm="ngForm" novalidate>
+    <label for="workspace-name">Workspace Name</label>
+    <input
+      id="workspace-name"
+      name="workspaceName"
+      type="text"
+      required
+      [(ngModel)]="name"
+      [disabled]="isSubmitting"
+      placeholder="e.g. Product Team"
+    />
+
+    <div class="actions">
+      <button type="submit" [disabled]="isSubmitting || !workspaceForm.form.valid">
+        {{ isSubmitting ? 'Creating...' : 'Create Workspace' }}
+      </button>
+      <a routerLink="/dashboard">Cancel</a>
+    </div>
+  </form>
+
+  <p *ngIf="error" class="error">{{ error }}</p>
+</div>
