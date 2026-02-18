@@ -1,5 +1,25 @@
-<div style="padding: 20px;">
-  <h1>Sentinent Dashboard</h1>
-  <p>Welcome to your unified aggregator dashboard!</p>
-  <button (click)="logout()" style="width: auto;">Logout</button>
+<div class="dashboard-container">
+  <header>
+    <h1>Sentinent Dashboard</h1>
+    <button (click)="logout()" class="logout-btn">Logout</button>
+  </header>
+
+  <section class="workspaces-section">
+    <div class="section-header">
+      <h2>Your Workspaces</h2>
+      <a routerLink="/workspace/create" class="create-btn">Create New Workspace</a>
+    </div>
+
+    <div class="workspace-list">
+      <div *ngFor="let ws of workspaces" class="workspace-card">
+        <h3>{{ ws.name }}</h3>
+        <p>{{ ws.description }}</p>
+        <small>Created: {{ ws.createdDate | date }}</small>
+      </div>
+    </div>
+    
+    <div *ngIf="workspaces.length === 0" class="empty-state">
+      <p>No workspaces found. Create one to get started!</p>
+    </div>
+  </section>
 </div>
