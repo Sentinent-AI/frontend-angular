@@ -27,18 +27,16 @@
       <a routerLink="/workspace/create" class="create-btn">Create Workspace</a>
     </div>
 
-    <div class="workspace-list">
-      <a *ngFor="let ws of workspaces" [routerLink]="['/workspaces', ws.id]" class="workspace-card-link">
-        <div class="workspace-card">
-          <h3>{{ ws.name }}</h3>
-          <p>{{ ws.description }}</p>
-          <small>Created: {{ ws.createdDate | date }}</small>
+    <div class="workspace-list" *ngIf="workspaces.length > 0; else empty">
+      <article *ngFor="let ws of workspaces" class="workspace-card">
+        <h3>{{ ws.name }}</h3>
+        <p>{{ ws.description || 'No description yet.' }}</p>
+        <small>Created: {{ ws.createdDate | date }}</small>
+        <div class="card-actions">
+          <button type="button" class="action-btn edit-btn" (click)="editWorkspace(ws)">Edit</button>
+          <button type="button" class="action-btn delete-btn" (click)="deleteWorkspace(ws)">Delete</button>
         </div>
-      </a>
-    </div>
-
-    <div *ngIf="workspaces.length === 0" class="empty-state">
-      <p>No workspaces found. Create one to get started!</p>
+      </article>
     </div>
 
     <ng-template #empty>
