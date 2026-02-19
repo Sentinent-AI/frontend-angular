@@ -55,17 +55,6 @@
   place-items: center;
 }
 
-nav {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.workspace-card-link {
-  text-decoration: none;
-  color: inherit;
-}
-
 .logout-btn {
   border: 1px solid rgba(255, 255, 255, 0.24);
   background: transparent;
@@ -156,6 +145,36 @@ nav {
   color: #666;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.card-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  border-radius: 8px;
+  border: 1px solid #d0d0d0;
+  padding: 7px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  background: #fff;
+  color: #111;
+}
+
+.edit-btn:hover {
+  background: #f3f3f3;
+}
+
+.delete-btn {
+  border-color: #2b2b2b;
+  background: #111;
+  color: #fff;
+}
+
+.delete-btn:hover {
+  background: #000;
 }
 
 .empty-state {
