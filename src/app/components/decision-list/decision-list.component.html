@@ -1,7 +1,10 @@
 <div class="decision-container">
     <div class="header">
         <h2>Decisions</h2>
-        <a routerLink="new" class="btn-primary">Create New Decision</a>
+        <div class="header-actions">
+            <a routerLink="new" class="btn-primary">Create Decision</a>
+            <a routerLink="/dashboard" class="btn-ghost">Back to Dashboard</a>
+        </div>
     </div>
 
     <div class="decision-list" *ngIf="decisions$ | async as decisions">

@@ -1,5 +1,8 @@
 <div class="form-container">
-    <h2>{{ isEditMode ? 'Edit Decision' : 'Create New Decision' }}</h2>
+    <div class="form-header">
+        <h2>{{ isEditMode ? 'Edit Decision' : 'Create New Decision' }}</h2>
+        <a routerLink="/dashboard" class="btn-ghost">Back to Dashboard</a>
+    </div>
 
     <form [formGroup]="decisionForm" (ngSubmit)="onSubmit()">
         <div class="form-group">
@@ -27,7 +30,7 @@
         </div>
 
         <div class="form-actions">
-            <button type="button" routerLink="../" class="btn-secondary">Cancel</button>
+            <button type="button" routerLink="../" class="btn-secondary">Back</button>
             <button type="submit" [disabled]="decisionForm.invalid || isLoading" class="btn-primary">
                 {{ isEditMode ? 'Update Decision' : 'Create Decision' }}
             </button>

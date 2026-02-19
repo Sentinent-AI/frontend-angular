@@ -1,10 +1,22 @@
 .form-container {
     max-width: 600px;
-    margin: 20px auto;
+    margin: 8px auto 20px;
     padding: 20px;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 12px;
     background-color: #fff;
+}
+
+.form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.form-header h2 {
+    margin: 0;
 }
 
 .form-group {
@@ -19,9 +31,9 @@
 
 .form-control {
     width: 100%;
-    padding: 8px;
+    padding: 10px 11px;
     border: 1px solid #ced4da;
-    border-radius: 4px;
+    border-radius: 8px;
     box-sizing: border-box;
     /* Ensures padding doesn't increase width */
 }
@@ -44,24 +56,35 @@
 }
 
 .btn-primary {
-    background-color: #007bff;
-    color: white;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
+    background-color: #111;
+    color: #fff;
+    padding: 8px 14px;
+    border: 1px solid #111;
+    border-radius: 8px;
     cursor: pointer;
 }
 
 .btn-primary:disabled {
-    background-color: #a0c4ff;
+    background-color: #888;
+    border-color: #888;
     cursor: not-allowed;
 }
 
 .btn-secondary {
-    background-color: #6c757d;
-    color: white;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
+    background-color: #fff;
+    color: #111;
+    padding: 8px 14px;
+    border: 1px solid #cfcfcf;
+    border-radius: 8px;
     cursor: pointer;
+}
+
+.btn-ghost {
+    background: #fff;
+    color: #111;
+    padding: 8px 12px;
+    text-decoration: none;
+    border-radius: 8px;
+    border: 1px solid #cfcfcf;
+    font-size: 13px;
 }
