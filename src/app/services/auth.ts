@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { HttpClient, HttpResponse } from '@angular/common/http';
+import { map, Observable, tap } from 'rxjs';
 
 interface AuthResponse {
   token: string;
@@ -11,11 +11,16 @@ interface AuthResponse {
 })
 export class AuthService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8080/api';
+  private apiUrl = '/api';
   private tokenKey = 'sentinent_token';
 
-  signup(email: string, password: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/signup`, { email, password });
+  signup(email: string, password: string): Observable<void> {
+    return this.http.post(`${this.apiUrl}/signup`, { email, password }, {
+      observe: 'response',
+      responseType: 'text'
+    }).pipe(
+      map((_res: HttpResponse<string>) => undefined)
+    );
   }
 
   login(email: string, password: string): Observable<AuthResponse> {

@@ -1,16 +1,110 @@
-<div class="auth-container">
-  <h2>Login</h2>
-  <form (ngSubmit)="onSubmit()">
-    <div class="form-group">
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" [(ngModel)]="email" required>
+<button class="theme-toggle" type="button" (click)="toggleTheme()" aria-label="Toggle theme">
+  <span class="theme-glyph" [class.dark-active]="isDarkMode" aria-hidden="true"></span>
+</button>
+
+<div class="noise"></div>
+
+<div class="split-layout">
+  <section class="brand-side">
+    <div class="brand-pattern"></div>
+    <div class="brand-content">
+      <div class="brand-header">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+            <rect x="4" y="6" width="20" height="8" rx="1.5" />
+            <rect x="8" y="18" width="20" height="8" rx="1.5" />
+          </svg>
+        </div>
+        <span class="brand-name">Sentinent</span>
+      </div>
+
+      <h1>The System of Record for Decisions</h1>
+      <p class="brand-copy">
+        Join enterprise teams who replace chaotic Slack threads with structured, auditable decision-making.
+      </p>
+
+      <ul class="trust-list">
+        <li>SOC 2 Type II Certified</li>
+        <li>GDPR Compliant</li>
+        <li>99.99% Uptime SLA</li>
+      </ul>
     </div>
-    <div class="form-group">
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" [(ngModel)]="password" required>
+
+    <div class="brand-footer">© 2026 Sentinent Systems Inc.</div>
+  </section>
+
+  <section class="auth-side">
+    <div class="auth-shell">
+      <header class="auth-header">
+        <h2>Welcome back</h2>
+        <p>Sign in to access your Decision Ledger</p>
+      </header>
+
+      <nav class="auth-tabs">
+        <button type="button" class="auth-tab" [class.active]="activeTab === 'login'" (click)="switchTab('login')">Sign In</button>
+        <button type="button" class="auth-tab" [class.active]="activeTab === 'register'" (click)="switchTab('register')">Create Account</button>
+      </nav>
+
+      <form *ngIf="isLoginVisible" (ngSubmit)="handleLogin()" class="form-section" novalidate>
+        <label class="input-label" for="loginEmail">Email</label>
+        <input id="loginEmail" name="loginEmail" class="input-field" type="email" autocomplete="email"
+          [(ngModel)]="loginEmail" (input)="onLoginEmailInput()" placeholder="you@email.com">
+
+        <label class="input-label" for="loginPassword">Password</label>
+        <input id="loginPassword" name="loginPassword" class="input-field" type="password"
+          autocomplete="current-password" [(ngModel)]="loginPassword" (input)="onLoginPasswordInput()"
+          placeholder="••••••••••••">
+
+        <div class="form-row">
+          <label class="checkbox-wrapper">
+            <input type="checkbox" name="rememberMe" [(ngModel)]="rememberMe">
+            <span>Remember me</span>
+          </label>
+          <button type="button" class="text-link" (click)="showForgotPassword()">Forgot password?</button>
+        </div>
+
+        <button type="submit" class="btn-primary" [disabled]="isLoginSubmitting">
+          Sign In to Dashboard
+          <span *ngIf="isLoginSubmitting" class="spinner" aria-hidden="true"></span>
+        </button>
+        <p *ngIf="isLoginVisible && loginError" class="error-text">{{ loginError }}</p>
+      </form>
+
+      <form *ngIf="isRegisterVisible" (ngSubmit)="handleRegister()" class="form-section" novalidate>
+        <label class="input-label" for="regEmail">Email</label>
+        <input id="regEmail" name="regEmail" class="input-field" type="email"
+          autocomplete="email" [(ngModel)]="regEmail" (input)="onRegisterEmailInput()"
+          placeholder="you@email.com">
+
+        <label class="input-label" for="regPassword">Password</label>
+        <input id="regPassword" name="regPassword" class="input-field" type="password" [(ngModel)]="regPassword"
+          (input)="onRegisterPasswordInput()" placeholder="••••••••••••">
+
+        <button type="submit" class="btn-primary" [disabled]="isRegisterDisabled || isRegisterSubmitting">
+          Create Account
+        </button>
+        <p *ngIf="isRegisterVisible && registerError" class="error-text">{{ registerError }}</p>
+      </form>
+
+      <form *ngIf="showForgot" (ngSubmit)="handleForgot()" class="form-section">
+        <label class="input-label" for="forgotEmail">Work Email</label>
+        <input id="forgotEmail" name="forgotEmail" class="input-field" type="email" required [(ngModel)]="forgotEmail"
+          (input)="onForgotEmailInput()" placeholder="you@company.com">
+        <p class="subtle-copy">We'll send a password reset link to your email address.</p>
+
+        <button type="submit" class="btn-primary" [disabled]="isForgotSubmitting">
+          Send Reset Link
+          <span *ngIf="isForgotSubmitting" class="spinner" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="back-btn" (click)="backToLogin()">← Back to Sign In</button>
+      </form>
+
+      <div *ngIf="showSuccess" class="success-message">
+        <div class="success-icon">✓</div>
+        <h3>{{ successTitle }}</h3>
+        <p>{{ successText }}</p>
+      </div>
+
     </div>
-    <button type="submit">Login</button>
-  </form>
-  <p *ngIf="error" class="error">{{ error }}</p>
-  <p>Don't have an account? <a routerLink="/signup">Sign up</a></p>
+  </section>
 </div>
