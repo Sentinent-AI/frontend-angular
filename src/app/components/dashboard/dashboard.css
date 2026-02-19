@@ -55,6 +55,17 @@
   place-items: center;
 }
 
+nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.workspace-card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
 .logout-btn {
   border: 1px solid rgba(255, 255, 255, 0.24);
   background: transparent;
