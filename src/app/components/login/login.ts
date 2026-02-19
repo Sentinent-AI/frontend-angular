@@ -1,7 +1,9 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { finalize, timeout } from 'rxjs';
 import { AuthService } from '../../services/auth';
 
 @Component({
@@ -18,38 +20,27 @@ export class Login implements OnInit {
   loginPassword = '';
   rememberMe = true;
   loginError = '';
+  registerError = '';
 
-  regName = '';
   regEmail = '';
   regPassword = '';
-  regTerms = false;
-  regEmailHasPersonalDomain = false;
 
   forgotEmail = '';
-  ssoDomain = '';
 
   showForgot = false;
-  showSSO = false;
   showSuccess = false;
   successTitle = 'Check your email';
   successText = 'We sent you a verification link.';
 
   isDarkMode = false;
-  isOAuthLoading = false;
   isLoginSubmitting = false;
   isRegisterSubmitting = false;
   isForgotSubmitting = false;
-  isSSOSubmitting = false;
-
-  passwordStrength = 0;
-  passwordHint = 'Use 8+ characters with mixed case, numbers, and symbols';
-  passwordStrengthClass = 'weak';
-
-  private readonly personalDomains = new Set(['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com']);
 
   private authService = inject(AuthService);
   private router = inject(Router);
   private document = inject(DOCUMENT);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     this.activeTab = this.router.url.startsWith('/signup') ? 'register' : 'login';
@@ -68,21 +59,14 @@ export class Login implements OnInit {
   switchTab(tab: 'login' | 'register'): void {
     this.activeTab = tab;
     this.showForgot = false;
-    this.showSSO = false;
     this.showSuccess = false;
     this.loginError = '';
+    this.registerError = '';
     this.router.navigate([tab === 'login' ? '/login' : '/signup']);
   }
 
   showForgotPassword(): void {
     this.showForgot = true;
-    this.showSSO = false;
-    this.showSuccess = false;
-  }
-
-  showSSOForm(): void {
-    this.showForgot = false;
-    this.showSSO = true;
     this.showSuccess = false;
   }
 
@@ -90,42 +74,85 @@ export class Login implements OnInit {
     this.switchTab('login');
   }
 
-  handleOAuth(provider: 'google'): void {
-    this.isOAuthLoading = true;
-    setTimeout(() => {
-      this.isOAuthLoading = false;
-      this.showSuccessMessage('Connected!', `Redirecting to ${provider}...`);
-    }, 1200);
-  }
-
   handleLogin(): void {
     this.loginError = '';
+    if (!this.loginEmail.trim() || !this.loginPassword.trim()) {
+      this.loginError = 'Invalid credentials';
+      return;
+    }
     this.isLoginSubmitting = true;
 
-    this.authService.login(this.loginEmail.trim(), this.loginPassword).subscribe({
+    this.authService.login(this.loginEmail.trim(), this.loginPassword).pipe(
+      timeout(8000),
+      finalize(() => {
+        this.isLoginSubmitting = false;
+        this.syncView();
+      })
+    ).subscribe({
       next: () => {
         this.showSuccessMessage('Welcome back', 'Redirecting to your Decision Ledger...');
+        this.syncView();
         setTimeout(() => this.router.navigate(['/dashboard']), 1200);
       },
-      error: () => {
-        this.loginError = 'Invalid credentials.';
-        this.isLoginSubmitting = false;
+      error: (err: HttpErrorResponse) => {
+        const backendMessage = typeof err.error === 'string' ? err.error.toLowerCase() : '';
+        if (err.status === 401 || backendMessage.includes('invalid credentials')) {
+          this.loginError = 'Invalid credentials';
+          this.syncView();
+          return;
+        }
+        this.loginError = 'Sign in failed. Please try again.';
+        this.syncView();
       }
     });
   }
 
   handleRegister(): void {
+    if (!this.regEmail.trim() || !this.regPassword.trim()) {
+      this.registerError = 'Invalid credentials';
+      return;
+    }
     this.isRegisterSubmitting = true;
-    this.loginError = '';
+    this.registerError = '';
 
-    this.authService.signup(this.regEmail.trim(), this.regPassword).subscribe({
+    this.authService.signup(this.regEmail.trim(), this.regPassword).pipe(
+      timeout(8000),
+      finalize(() => {
+        this.isRegisterSubmitting = false;
+        this.syncView();
+      })
+    ).subscribe({
       next: () => {
-        this.showSuccessMessage('Account created!', 'Please check your email to verify your account.');
-        this.isRegisterSubmitting = false;
+        this.regPassword = '';
+        this.loginEmail = this.regEmail.trim();
+        this.showForgot = false;
+        this.loginError = '';
+        this.registerError = '';
+        this.showSuccessMessage(
+          'Account is successfully created',
+          'You will be redirected to login page shortly.'
+        );
+        this.syncView();
+        setTimeout(() => {
+          this.activeTab = 'login';
+          this.showSuccess = false;
+          this.router.navigate(['/login']);
+          this.syncView();
+        }, 1500);
       },
-      error: () => {
-        this.loginError = 'Registration failed. Email might already be taken.';
-        this.isRegisterSubmitting = false;
+      error: (err: HttpErrorResponse) => {
+        this.activeTab = 'register';
+        this.showForgot = false;
+        this.showSuccess = false;
+
+        const backendMessage = typeof err.error === 'string' ? err.error.toLowerCase() : '';
+        if (err.status === 409 || backendMessage.includes('already exists')) {
+          this.registerError = 'Email already exists';
+          this.syncView();
+          return;
+        }
+        this.registerError = 'Registration failed. Please try again.';
+        this.syncView();
       }
     });
   }
@@ -138,48 +165,8 @@ export class Login implements OnInit {
     }, 1200);
   }
 
-  handleSSO(): void {
-    this.isSSOSubmitting = true;
-    const domain = this.ssoDomain.trim();
-    setTimeout(() => {
-      this.isSSOSubmitting = false;
-      this.showSuccessMessage('Redirecting...', `Connecting to ${domain}.sentinent.io identity provider.`);
-    }, 1200);
-  }
-
-  checkPasswordStrength(password: string): void {
-    let score = 0;
-
-    if (password.length > 8) score++;
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^a-zA-Z0-9]/.test(password)) score++;
-
-    this.passwordStrength = (score / 4) * 100;
-
-    if (score < 2) {
-      this.passwordStrengthClass = 'weak';
-      this.passwordHint = 'Weak password';
-      return;
-    }
-    if (score < 4) {
-      this.passwordStrengthClass = 'good';
-      this.passwordHint = 'Good, but could be stronger';
-      return;
-    }
-
-    this.passwordStrengthClass = 'strong';
-    this.passwordHint = 'Strong password';
-  }
-
-  validateEnterpriseEmail(): void {
-    const domain = this.regEmail.split('@')[1]?.toLowerCase();
-    this.regEmailHasPersonalDomain = !!domain && this.personalDomains.has(domain);
-  }
-
   private showSuccessMessage(title: string, text: string): void {
     this.showForgot = false;
-    this.showSSO = false;
     this.showSuccess = true;
     this.successTitle = title;
     this.successText = text;
@@ -195,11 +182,11 @@ export class Login implements OnInit {
   }
 
   get isRegisterDisabled(): boolean {
-    return !this.regName.trim() || !this.regEmail.trim() || !this.regPassword || !this.regTerms || this.regEmailHasPersonalDomain;
+    return !this.regEmail.trim() || !this.regPassword;
   }
 
   get isAuthFormVisible(): boolean {
-    return !this.showForgot && !this.showSSO && !this.showSuccess;
+    return !this.showForgot && !this.showSuccess;
   }
 
   get isLoginVisible(): boolean {
@@ -227,28 +214,19 @@ export class Login implements OnInit {
   }
 
   onRegisterEmailInput(): void {
-    this.clearGlobalError();
-    this.validateEnterpriseEmail();
+    this.registerError = '';
   }
 
   onRegisterPasswordInput(): void {
-    this.clearGlobalError();
-    this.checkPasswordStrength(this.regPassword);
-  }
-
-  onRegisterNameInput(): void {
-    this.clearGlobalError();
-  }
-
-  onRegisterTermsChange(): void {
-    this.clearGlobalError();
+    this.registerError = '';
   }
 
   onForgotEmailInput(): void {
     this.clearGlobalError();
   }
 
-  onSSODomainInput(): void {
-    this.clearGlobalError();
+  private syncView(): void {
+    this.cdr.detectChanges();
   }
+
 }
