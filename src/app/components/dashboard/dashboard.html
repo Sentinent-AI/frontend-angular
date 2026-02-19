@@ -1,25 +1,45 @@
-<div class="dashboard-container">
-  <header>
-    <h1>Sentinent Dashboard</h1>
-    <button (click)="logout()" class="logout-btn">Logout</button>
-  </header>
+<div class="dashboard-shell">
+  <div class="noise"></div>
 
-  <section class="workspaces-section">
+  <section class="hero">
+    <div class="hero-top">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+            <rect x="4" y="6" width="20" height="8" rx="1.5"></rect>
+            <rect x="8" y="18" width="20" height="8" rx="1.5"></rect>
+          </svg>
+        </div>
+        <span>Sentinent</span>
+      </div>
+      <button (click)="logout()" class="logout-btn">Logout</button>
+    </div>
+
+    <div class="hero-copy">
+      <h1>Decision Workspace Dashboard</h1>
+      <p>Track all active workspaces in one place with clean structure and minimal noise.</p>
+    </div>
+  </section>
+
+  <section class="content">
     <div class="section-header">
       <h2>Your Workspaces</h2>
-      <a routerLink="/workspace/create" class="create-btn">Create New Workspace</a>
+      <a routerLink="/workspace/create" class="create-btn">Create Workspace</a>
     </div>
 
-    <div class="workspace-list">
-      <div *ngFor="let ws of workspaces" class="workspace-card">
+    <div class="workspace-list" *ngIf="workspaces.length > 0; else empty">
+      <article *ngFor="let ws of workspaces" class="workspace-card">
         <h3>{{ ws.name }}</h3>
         <p>{{ ws.description }}</p>
-        <small>Created: {{ ws.createdDate | date }}</small>
+        <small>Created: {{ ws.createdDate | date: 'mediumDate' }}</small>
+      </article>
+    </div>
+
+    <ng-template #empty>
+      <div class="empty-state">
+        <h3>No workspaces yet</h3>
+        <p>Create your first workspace to get started.</p>
       </div>
-    </div>
-    
-    <div *ngIf="workspaces.length === 0" class="empty-state">
-      <p>No workspaces found. Create one to get started!</p>
-    </div>
+    </ng-template>
   </section>
 </div>
