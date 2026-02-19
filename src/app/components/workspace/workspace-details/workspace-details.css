@@ -1,42 +1,68 @@
 .workspace-details-container {
-    padding: 20px;
-    max-width: 1000px;
+    padding: 28px 24px;
+    max-width: 1100px;
     margin: 0 auto;
 }
 
 header {
     margin-bottom: 20px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 20px;
+    border-bottom: 1px solid #dedede;
+    padding-bottom: 18px;
+}
+
+.header-top {
+    margin-bottom: 12px;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: #fff;
+    background: #0a0a0a;
+    border: 1px solid #0a0a0a;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13px;
+}
+
+.back-btn:hover {
+    background: #000;
 }
 
 header h1 {
-    margin: 0 0 10px 0;
+    margin: 0 0 8px;
+    font-size: 34px;
 }
 
 header p {
-    color: #666;
+    color: #555;
     margin: 0;
 }
 
 .workspace-nav {
     display: flex;
-    gap: 20px;
-    border-bottom: 1px solid #ddd;
-    margin-bottom: 20px;
+    gap: 8px;
+    border-bottom: 1px solid #dedede;
+    padding-bottom: 10px;
+    margin-bottom: 24px;
 }
 
 .workspace-nav a {
-    padding: 10px 15px;
+    padding: 8px 14px;
     text-decoration: none;
-    color: #555;
-    border-bottom: 2px solid transparent;
+    color: #444;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.1;
 }
 
 .workspace-nav a.active {
-    color: #007bff;
-    border-bottom-color: #007bff;
-    font-weight: 500;
+    color: #fff;
+    background: #0a0a0a;
+    border-color: #0a0a0a;
+    font-weight: 600;
 }
 
 .loading {
