@@ -1,6 +1,6 @@
 .decision-container {
-    padding: 20px;
-    max-width: 800px;
+    padding: 0 0 20px;
+    max-width: 920px;
     margin: 0 auto;
 }
 
@@ -8,42 +8,69 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+    gap: 12px;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 30px;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
 }
 
 .btn-primary {
-    background-color: #007bff;
-    color: white;
-    padding: 10px 15px;
+    background-color: #0a0a0a;
+    color: #fff;
+    padding: 9px 13px;
     text-decoration: none;
-    border-radius: 4px;
+    border-radius: 8px;
+    border: 1px solid #0a0a0a;
+    font-size: 13px;
+}
+
+.btn-ghost {
+    background: #fff;
+    color: #111;
+    padding: 9px 13px;
+    text-decoration: none;
+    border-radius: 8px;
+    border: 1px solid #d2d2d2;
+    font-size: 13px;
 }
 
 .btn-secondary {
-    background-color: #6c757d;
-    color: white;
-    padding: 5px 10px;
+    background-color: #fff;
+    color: #111;
+    padding: 7px 11px;
     text-decoration: none;
-    border-radius: 4px;
+    border-radius: 8px;
+    border: 1px solid #d2d2d2;
     margin-right: 5px;
     cursor: pointer;
-    border: none;
+    font-size: 13px;
 }
 
 .btn-danger {
-    background-color: #dc3545;
-    color: white;
-    padding: 5px 10px;
-    border: none;
-    border-radius: 4px;
+    background-color: #111;
+    color: #fff;
+    padding: 7px 11px;
+    border: 1px solid #111;
+    border-radius: 8px;
     cursor: pointer;
+    font-size: 13px;
 }
 
 .decision-card {
     border: 1px solid #ddd;
-    padding: 15px;
+    padding: 16px;
     margin-bottom: 10px;
-    border-radius: 4px;
+    border-radius: 10px;
     background-color: #fff;
 }
 
@@ -59,25 +86,27 @@
 }
 
 .status-badge {
-    padding: 3px 8px;
-    border-radius: 12px;
+    padding: 3px 9px;
+    border-radius: 999px;
     font-size: 12px;
-    font-weight: bold;
+    font-weight: 600;
+    border: 1px solid #d5d5d5;
 }
 
 .status-badge.draft {
-    background-color: #e2e3e5;
-    color: #383d41;
+    background-color: #efefef;
+    color: #303030;
 }
 
 .status-badge.open {
-    background-color: #d4edda;
-    color: #155724;
+    background-color: #ffffff;
+    color: #111;
 }
 
 .status-badge.closed {
-    background-color: #d1ecf1;
-    color: #0c5460;
+    background-color: #111;
+    color: #fff;
+    border-color: #111;
 }
 
 .decision-meta {
