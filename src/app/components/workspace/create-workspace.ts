@@ -13,6 +13,7 @@ import { WorkspaceService } from '../../services/workspace';
 })
 export class CreateWorkspace {
   name = '';
+  description = '';
   error = '';
   isSubmitting = false;
 
@@ -29,7 +30,7 @@ export class CreateWorkspace {
     this.isSubmitting = true;
     this.error = '';
 
-    this.workspaceService.createWorkspace(trimmedName).subscribe({
+    this.workspaceService.createWorkspace(trimmedName, this.description.trim()).subscribe({
       next: () => this.router.navigate(['/dashboard']),
       error: () => {
         this.error = 'Unable to create workspace. Please try again.';

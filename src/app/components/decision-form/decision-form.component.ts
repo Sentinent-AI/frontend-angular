@@ -17,6 +17,7 @@ export class DecisionFormComponent implements OnInit {
     isEditMode = false;
     decisionId: string | null = null;
     isLoading = false;
+    workspaceId: string | null = null;
 
     constructor(
         private fb: FormBuilder,
@@ -32,13 +33,7 @@ export class DecisionFormComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        // Get workspaceId from parent
-        this.route.parent?.paramMap.subscribe(params => {
-            const workspaceId = params.get('id');
-            if (workspaceId) {
-                this.decisionForm.patchValue({ workspaceId });
-            }
-        });
+        this.workspaceId = this.getWorkspaceIdFromRoute();
 
         // Get decisionId from current route
         this.route.paramMap.subscribe(params => {
@@ -78,11 +73,23 @@ export class DecisionFormComponent implements OnInit {
                 this.router.navigate(['../../'], { relativeTo: this.route });
             });
         } else {
-            // Include workspaceId from parent route if available
-            const workspaceId = this.route.parent?.snapshot.paramMap.get('id');
-            this.decisionService.createDecision({ ...formValue, workspaceId }).subscribe(() => {
+            if (!this.workspaceId) {
+                return;
+            }
+
+            this.decisionService.createDecision({ ...formValue, workspaceId: this.workspaceId }).subscribe(() => {
                 this.router.navigate(['../'], { relativeTo: this.route });
             });
         }
+    }
+
+    private getWorkspaceIdFromRoute(): string | null {
+        for (const route of this.route.pathFromRoot) {
+            const id = route.snapshot.paramMap.get('id');
+            if (id) {
+                return id;
+            }
+        }
+        return null;
     }
 }

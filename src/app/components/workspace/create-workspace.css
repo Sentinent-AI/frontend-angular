@@ -28,10 +28,13 @@ label {
   font-weight: 600;
 }
 
-input {
+input,
+textarea {
   padding: 10px 12px;
   border: 1px solid #d0d7de;
   border-radius: 6px;
+  font: inherit;
+  resize: vertical;
 }
 
 .actions {

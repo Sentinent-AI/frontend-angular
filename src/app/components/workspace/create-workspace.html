@@ -14,6 +14,16 @@
       placeholder="e.g. Product Team"
     />
 
+    <label for="workspace-description">Description</label>
+    <textarea
+      id="workspace-description"
+      name="workspaceDescription"
+      [(ngModel)]="description"
+      [disabled]="isSubmitting"
+      rows="4"
+      placeholder="Describe this workspace"
+    ></textarea>
+
     <div class="actions">
       <button type="submit" [disabled]="isSubmitting || !workspaceForm.form.valid">
         {{ isSubmitting ? 'Creating...' : 'Create Workspace' }}

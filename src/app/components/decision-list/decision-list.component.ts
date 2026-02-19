@@ -21,18 +21,25 @@ export class DecisionListComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
-        // Get workspaceId from the parent route (workspaces/:id)
-        this.route.parent?.paramMap.subscribe(params => {
-            const workspaceId = params.get('id');
-            if (workspaceId) {
-                this.decisions$ = this.decisionService.getDecisions(workspaceId);
-            }
-        });
+        const workspaceId = this.getWorkspaceIdFromRoute();
+        if (workspaceId) {
+            this.decisions$ = this.decisionService.getDecisions(workspaceId);
+        }
     }
 
     deleteDecision(id: string): void {
         if (confirm('Are you sure you want to delete this decision?')) {
             this.decisionService.deleteDecision(id);
         }
+    }
+
+    private getWorkspaceIdFromRoute(): string | null {
+        for (const route of this.route.pathFromRoot) {
+            const id = route.snapshot.paramMap.get('id');
+            if (id) {
+                return id;
+            }
+        }
+        return null;
     }
 }

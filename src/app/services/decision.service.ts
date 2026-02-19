@@ -52,12 +52,16 @@ export class DecisionService {
     }
 
     createDecision(decision: Partial<Decision>): Observable<Decision> {
+        if (!decision.workspaceId) {
+            throw new Error('workspaceId is required to create a decision');
+        }
+
         const newDecision: Decision = {
             id: Math.random().toString(36).substring(2, 9),
             title: decision.title!,
             description: decision.description,
             status: decision.status || 'DRAFT',
-            workspaceId: decision.workspaceId || 'ws-1', // Default to ws-1 for now
+            workspaceId: decision.workspaceId,
             userId: 'user-1', // Mock user
             createdAt: new Date(),
             updatedAt: new Date(),

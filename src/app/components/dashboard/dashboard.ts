@@ -25,6 +25,41 @@ export class Dashboard implements OnInit {
     });
   }
 
+  editWorkspace(workspace: Workspace) {
+    const updatedName = window.prompt('Edit workspace name', workspace.name)?.trim();
+    if (!updatedName) {
+      return;
+    }
+
+    const updatedDescriptionInput = window.prompt('Edit workspace description', workspace.description ?? '');
+    if (updatedDescriptionInput === null) {
+      return;
+    }
+
+    const updatedDescription = updatedDescriptionInput.trim();
+
+    this.workspaceService.updateWorkspace(workspace.id, updatedName, updatedDescription).subscribe(updatedWorkspace => {
+      if (!updatedWorkspace) {
+        return;
+      }
+      this.workspaces = this.workspaces.map(ws => ws.id === updatedWorkspace.id ? updatedWorkspace : ws);
+    });
+  }
+
+  deleteWorkspace(workspace: Workspace) {
+    const confirmed = window.confirm(`Delete workspace "${workspace.name}"?`);
+    if (!confirmed) {
+      return;
+    }
+
+    this.workspaceService.deleteWorkspace(workspace.id).subscribe(deleted => {
+      if (!deleted) {
+        return;
+      }
+      this.workspaces = this.workspaces.filter(ws => ws.id !== workspace.id);
+    });
+  }
+
   logout() {
     this.authService.logout();
     this.router.navigate(['/login']);
