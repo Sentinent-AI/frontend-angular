@@ -33,6 +33,7 @@
         <p>{{ ws.description || 'No description yet.' }}</p>
         <small>Created: {{ ws.createdDate | date: 'mediumDate' }}</small>
         <div class="card-actions">
+          <a [routerLink]="['/workspaces', ws.id, 'decisions']" class="action-btn open-btn">Open</a>
           <button type="button" class="action-btn edit-btn" (click)="editWorkspace(ws)">Edit</button>
           <button type="button" class="action-btn delete-btn" (click)="deleteWorkspace(ws)">Delete</button>
         </div>
