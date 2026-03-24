@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { Login } from './components/login/login';
 import { authGuard } from './guards/auth-guard';
 import { CreateWorkspace } from './components/workspace/create-workspace';
+import { WorkspaceIntegrationsComponent } from './components/workspace-integrations/workspace-integrations';
 
 export const routes: Routes = [
   { path: 'login', component: Login },
@@ -14,6 +15,11 @@ export const routes: Routes = [
   {
     path: 'workspace/create',
     component: CreateWorkspace,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'workspaces/:id/settings/integrations',
+    component: WorkspaceIntegrationsComponent,
     canActivate: [authGuard]
   },
   {

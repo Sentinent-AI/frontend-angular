@@ -1,0 +1,36 @@
+<section class="signals-board">
+  <article class="signal-card" *ngFor="let signal of signals; trackBy: trackBySignal">
+    <div class="signal-top">
+      <div>
+        <span class="signal-source">GitHub</span>
+        <h3>{{ signal.title }}</h3>
+      </div>
+      <span class="signal-status" [class.unread]="signal.status === 'unread'">
+        {{ signal.status }}
+      </span>
+    </div>
+
+    <p class="signal-meta">
+      {{ getTypeLabel(signal) }} #{{ signal.metadata.number }} in {{ signal.metadata.repository }}
+    </p>
+    <p class="signal-body">{{ signal.content }}</p>
+
+    <div class="signal-badges">
+      <span class="badge neutral">{{ signal.metadata.state }}</span>
+      <span class="badge" *ngFor="let label of signal.metadata.labels">{{ label }}</span>
+    </div>
+
+    <div class="signal-footer">
+      <div class="assignees">
+        <span *ngFor="let assignee of signal.metadata.assignees">{{ assignee }}</span>
+      </div>
+      <small>{{ signal.receivedAt | date: 'medium' }}</small>
+    </div>
+
+    <div class="signal-actions">
+      <a class="link-btn" *ngIf="signal.url" [href]="signal.url" target="_blank" rel="noreferrer">Open in GitHub</a>
+      <button type="button" class="ghost-btn" (click)="markAsRead.emit(signal.id)">Mark as read</button>
+      <button type="button" class="ghost-btn" (click)="archive.emit(signal.id)">Archive</button>
+    </div>
+  </article>
+</section>

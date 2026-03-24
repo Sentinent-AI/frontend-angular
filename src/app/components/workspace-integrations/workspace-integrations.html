@@ -1,0 +1,74 @@
+<section class="integrations-shell">
+  <header class="integrations-header">
+    <div>
+      <p class="eyebrow">Workspace Integration</p>
+      <h2>GitHub Activity Feed</h2>
+      <p class="intro">
+        Connect GitHub to pull assigned issues and pull requests into Sentinent without leaving your workspace flow.
+      </p>
+    </div>
+    <a class="back-link" [routerLink]="['/workspaces', workspaceId, 'decisions']">Back to workspace</a>
+  </header>
+
+  <article class="integration-card">
+    <div class="card-copy">
+      <span class="provider-badge">GitHub</span>
+      <h3>Connection status</h3>
+      <p *ngIf="isConnected; else disconnectedState">
+        Connected as <strong>{{ accountName }}</strong>
+        <span *ngIf="accountHandle">({{ accountHandle }})</span>.
+      </p>
+      <ng-template #disconnectedState>
+        <p>Not connected yet. Start the OAuth flow to import assigned work from GitHub.</p>
+      </ng-template>
+    </div>
+
+    <div class="card-actions">
+      <button *ngIf="!isConnected" type="button" class="primary-btn" (click)="connectGitHub()">Connect GitHub</button>
+      <button *ngIf="isConnected" type="button" class="secondary-btn" (click)="disconnectGitHub()">Disconnect</button>
+      <button *ngIf="isConnected" type="button" class="primary-btn" [disabled]="isSyncing" (click)="syncNow()">
+        {{ isSyncing ? 'Syncing...' : 'Sync Now' }}
+      </button>
+    </div>
+  </article>
+
+  <p class="feedback success" *ngIf="feedbackMessage">{{ feedbackMessage }}</p>
+  <p class="feedback error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <section class="selection-card" *ngIf="isConnected">
+    <div class="section-head">
+      <div>
+        <h3>Repository selection</h3>
+        <p>Choose which repositories should contribute GitHub signals to the dashboard.</p>
+      </div>
+      <button type="button" class="primary-btn" [disabled]="isSaving" (click)="saveRepoSelection()">
+        {{ isSaving ? 'Saving...' : 'Save Selection' }}
+      </button>
+    </div>
+
+    <div class="repo-list">
+      <label class="repo-item" *ngFor="let repo of repos">
+        <input
+          type="checkbox"
+          [checked]="isRepoSelected(repo.id)"
+          (change)="onRepoToggle(repo.id, $event)"
+        />
+        <span>
+          <strong>{{ repo.name }}</strong>
+          <small>{{ repo.fullName }}</small>
+        </span>
+      </label>
+    </div>
+  </section>
+
+  <section class="sync-card" *ngIf="isConnected">
+    <h3>Sync status</h3>
+    <p *ngIf="lastSyncAt">Last sync: {{ lastSyncAt | date: 'medium' }}</p>
+    <p *ngIf="!lastSyncAt">No sync has run yet.</p>
+    <p *ngIf="syncStatus">
+      Current status:
+      <strong>{{ syncStatus.status }}</strong>
+      <span *ngIf="syncStatus.itemsSynced">({{ syncStatus.itemsSynced }} items)</span>
+    </p>
+  </section>
+</section>
