@@ -20,6 +20,7 @@ export class DecisionService {
                 status: 'CLOSED',
                 workspaceId: 'ws-1',
                 userId: 'user-1',
+                dueDate: new Date('2023-11-01'),
                 createdAt: new Date('2023-10-25'),
                 updatedAt: new Date('2023-10-26'),
                 isDeleted: false
@@ -63,6 +64,7 @@ export class DecisionService {
             status: decision.status || 'DRAFT',
             workspaceId: decision.workspaceId,
             userId: 'user-1', // Mock user
+            dueDate: decision.dueDate,
             createdAt: new Date(),
             updatedAt: new Date(),
             isDeleted: false
