@@ -5,6 +5,7 @@ export interface Decision {
     status: 'DRAFT' | 'OPEN' | 'CLOSED';
     workspaceId: string;
     userId: string;
+    dueDate?: Date;
     createdAt: Date;
     updatedAt: Date;
     isDeleted: boolean;

@@ -33,6 +33,13 @@ export class DecisionListComponent implements OnInit {
         }
     }
 
+    isOverdue(decision: Decision): boolean {
+        if (!decision.dueDate || decision.status === 'CLOSED') {
+            return false;
+        }
+        return new Date(decision.dueDate) < new Date();
+    }
+
     private getWorkspaceIdFromRoute(): string | null {
         for (const route of this.route.pathFromRoot) {
             const id = route.snapshot.paramMap.get('id');
