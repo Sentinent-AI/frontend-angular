@@ -28,7 +28,8 @@ export class DecisionFormComponent implements OnInit {
         this.decisionForm = this.fb.group({
             title: ['', Validators.required],
             description: [''],
-            status: ['DRAFT', Validators.required]
+            status: ['DRAFT', Validators.required],
+            dueDate: ['']
         });
     }
 
@@ -53,7 +54,8 @@ export class DecisionFormComponent implements OnInit {
                 this.decisionForm.patchValue({
                     title: decision.title,
                     description: decision.description,
-                    status: decision.status
+                    status: decision.status,
+                    dueDate: decision.dueDate ? new Date(decision.dueDate).toISOString().split('T')[0] : ''
                 });
             } else {
                 this.router.navigate(['../'], { relativeTo: this.route });

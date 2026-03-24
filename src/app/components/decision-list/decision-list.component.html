@@ -20,6 +20,9 @@
             <p class="decision-desc">{{ decision.description || 'No description provided.' }}</p>
             <div class="decision-meta">
                 <span>Created: {{ decision.createdAt | date:'shortDate' }}</span>
+                <span *ngIf="decision.dueDate" class="due-date" [ngClass]="{'overdue': isOverdue(decision)}">
+                    Due: {{ decision.dueDate | date:'shortDate' }}
+                </span>
             </div>
             <div class="decision-actions">
                 <a [routerLink]="[decision.id, 'edit']" class="btn-secondary">Edit</a>
