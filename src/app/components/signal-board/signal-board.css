@@ -1,0 +1,105 @@
+.signals-board {
+  display: grid;
+  gap: 1rem;
+}
+
+.signal-card {
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  border-radius: 20px;
+  padding: 1.25rem;
+  box-shadow: 0 18px 35px rgba(15, 23, 42, 0.06);
+}
+
+.signal-top,
+.signal-footer,
+.signal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.signal-source {
+  display: inline-flex;
+  margin-bottom: 0.45rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.signal-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.signal-status,
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.28rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.signal-status.unread {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.signal-meta,
+.signal-body {
+  color: #475569;
+}
+
+.signal-badges,
+.assignees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.9rem 0;
+}
+
+.badge.neutral {
+  background: #f1f5f9;
+}
+
+.signal-actions {
+  margin-top: 1rem;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.link-btn,
+.ghost-btn {
+  border-radius: 999px;
+  padding: 0.65rem 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-btn {
+  background: #111827;
+  color: #ffffff;
+}
+
+.ghost-btn {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .signal-top,
+  .signal-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
