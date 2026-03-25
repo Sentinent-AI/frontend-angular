@@ -11,6 +11,11 @@ describe('WorkspaceIntegrationsComponent', () => {
 
   beforeEach(async () => {
     mockIntegrationService = jasmine.createSpyObj<IntegrationService>('IntegrationService', [
+      'getSlackAuthUrl',
+      'getSlackChannels',
+      'connectSlack',
+      'updateSlackChannels',
+      'disconnectSlack',
       'getGitHubAuthUrl',
       'getGitHubRepos',
       'connectGitHub',
@@ -19,6 +24,20 @@ describe('WorkspaceIntegrationsComponent', () => {
       'syncGitHub',
       'getSyncStatus'
     ]);
+
+    mockIntegrationService.getSlackChannels.and.returnValue(of({
+      connected: true,
+      workspaceName: 'Sentinent Ops',
+      workspaceUrl: 'sentinent.slack.com',
+      channels: [
+        { id: 'C123', name: 'general', isConnected: true }
+      ],
+      lastSyncAt: new Date('2026-03-24T09:00:00Z')
+    }));
+    mockIntegrationService.updateSlackChannels.and.returnValue(of(void 0));
+    mockIntegrationService.disconnectSlack.and.returnValue(of(void 0));
+    mockIntegrationService.getSlackAuthUrl.and.returnValue(of({ authUrl: 'https://slack.com/mock' }));
+    mockIntegrationService.connectSlack.and.returnValue(of({ connected: true }));
 
     mockIntegrationService.getGitHubRepos.and.returnValue(of({
       connected: true,
@@ -65,6 +84,8 @@ describe('WorkspaceIntegrationsComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('frontend-angular');
     expect(compiled.textContent).toContain('Sentinent Engineering');
+    expect(compiled.textContent).toContain('Sentinent Ops');
+    expect(compiled.textContent).toContain('general');
   });
 
   it('should trigger sync and show refreshed item count', () => {
@@ -72,6 +93,13 @@ describe('WorkspaceIntegrationsComponent', () => {
     fixture.detectChanges();
 
     expect(mockIntegrationService.syncGitHub).toHaveBeenCalled();
-    expect(component.feedbackMessage).toContain('6 items refreshed');
+    expect(component.githubFeedbackMessage).toContain('6 items refreshed');
+  });
+
+  it('should save slack channel selection', () => {
+    component.saveSlackChannelSelection();
+
+    expect(mockIntegrationService.updateSlackChannels).toHaveBeenCalled();
+    expect(component.slackFeedbackMessage).toContain('saved');
   });
 });

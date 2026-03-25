@@ -8,6 +8,42 @@ import { Signal, SignalFilters } from '../models/signal.model';
 export class SignalService {
   private signals: Signal[] = [
     {
+      id: 'slack-101',
+      sourceType: 'slack',
+      sourceId: 'C123456',
+      externalId: '1735200123.0001',
+      title: 'Message from #general',
+      content: 'Heads up: the deployment window starts at 5 PM Eastern. Please confirm your checklist items.',
+      author: '@sam.ops',
+      status: 'unread',
+      receivedAt: new Date('2026-03-24T09:10:00Z'),
+      url: 'https://sentinent.slack.com/archives/C123456/p17352001230001',
+      metadata: {
+        channel: 'general',
+        channelId: 'C123456',
+        timestamp: '1735200123.0001',
+        user: 'U123456'
+      }
+    },
+    {
+      id: 'slack-102',
+      sourceType: 'slack',
+      sourceId: 'C456789',
+      externalId: '1735201123.0002',
+      title: 'Message from #engineering',
+      content: 'Can someone review the API rate-limit handling before we push the Slack integration branch?',
+      author: '@jordan.dev',
+      status: 'read',
+      receivedAt: new Date('2026-03-24T10:05:00Z'),
+      url: 'https://sentinent.slack.com/archives/C456789/p17352011230002',
+      metadata: {
+        channel: 'engineering',
+        channelId: 'C456789',
+        timestamp: '1735201123.0002',
+        user: 'U456789'
+      }
+    },
+    {
       id: 'github-101',
       sourceType: 'github',
       sourceId: 'Sentinent-AI/frontend-angular',
