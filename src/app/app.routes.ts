@@ -3,10 +3,15 @@ import { Login } from './components/login/login';
 import { authGuard } from './guards/auth-guard';
 import { CreateWorkspace } from './components/workspace/create-workspace';
 import { WorkspaceIntegrationsComponent } from './components/workspace-integrations/workspace-integrations';
+import { WorkspaceMembersComponent } from './components/workspace-members/workspace-members';
 
 export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'signup', component: Login },
+  {
+    path: 'invitations/:token',
+    loadComponent: () => import('./components/accept-invitation/accept-invitation').then(m => m.AcceptInvitationComponent)
+  },
   {
     path: 'dashboard',
     loadComponent: () => import('./components/dashboard/dashboard').then(m => m.Dashboard),
@@ -15,6 +20,11 @@ export const routes: Routes = [
   {
     path: 'workspace/create',
     component: CreateWorkspace,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'workspaces/:id/settings/members',
+    component: WorkspaceMembersComponent,
     canActivate: [authGuard]
   },
   {

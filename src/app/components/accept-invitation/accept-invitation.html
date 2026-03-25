@@ -1,0 +1,38 @@
+<section class="accept-shell">
+  <article class="accept-card" *ngIf="invitation && !error; else errorState">
+    <p class="eyebrow">Invitation</p>
+    <h1>Join {{ invitation.workspace.name }}</h1>
+    <p class="description">
+      {{ invitation.invitedBy.email }} invited you to join this workspace as a <strong>{{ invitation.role }}</strong>.
+    </p>
+
+    <div class="summary">
+      <div>
+        <span>Workspace</span>
+        <strong>{{ invitation.workspace.name }}</strong>
+      </div>
+      <div>
+        <span>Role</span>
+        <strong>{{ invitation.role }}</strong>
+      </div>
+    </div>
+
+    <p class="feedback success" *ngIf="success">{{ success }}</p>
+
+    <div class="actions">
+      <button type="button" class="primary-btn" [disabled]="isSubmitting" (click)="joinWorkspace()">
+        {{ isSubmitting ? 'Joining...' : 'Join Workspace' }}
+      </button>
+      <a routerLink="/dashboard" class="secondary-btn">Back to dashboard</a>
+    </div>
+  </article>
+
+  <ng-template #errorState>
+    <article class="accept-card error-card">
+      <p class="eyebrow">Invitation</p>
+      <h1>Invitation unavailable</h1>
+      <p class="description">{{ error || 'Invitation expired or invalid' }}</p>
+      <a routerLink="/dashboard" class="secondary-btn">Go to dashboard</a>
+    </article>
+  </ng-template>
+</section>

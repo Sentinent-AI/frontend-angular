@@ -1,0 +1,119 @@
+<section class="members-shell">
+  <header class="members-header">
+    <div>
+      <p class="eyebrow">Workspace Access</p>
+      <h2>Members and Invitations</h2>
+      <p>Invite teammates, manage roles, and keep pending access requests visible in one place.</p>
+    </div>
+    <a class="back-link" [routerLink]="['/workspaces', workspaceId, 'decisions']">Back to workspace</a>
+  </header>
+
+  <section class="invite-card">
+    <div class="section-head">
+      <div>
+        <h3>Invite Member</h3>
+        <p>Owners can invite members or viewers by email and share the generated invitation link.</p>
+      </div>
+    </div>
+
+    <div class="invite-form">
+      <label>
+        <span>Email</span>
+        <input type="email" [(ngModel)]="inviteEmail" placeholder="user@example.com" />
+      </label>
+
+      <label>
+        <span>Role</span>
+        <select [(ngModel)]="inviteRole">
+          <option value="member">Member</option>
+          <option value="viewer">Viewer</option>
+        </select>
+      </label>
+
+      <button type="button" class="primary-btn" [disabled]="isSubmittingInvite" (click)="inviteMember()">
+        {{ isSubmittingInvite ? 'Sending...' : 'Invite Member' }}
+      </button>
+    </div>
+
+    <p class="feedback success" *ngIf="inviteSuccess">{{ inviteSuccess }}</p>
+    <p class="feedback error" *ngIf="inviteError">{{ inviteError }}</p>
+    <div class="invite-link" *ngIf="invitationLink">
+      <span>Invitation link</span>
+      <code>{{ invitationLink }}</code>
+    </div>
+  </section>
+
+  <section class="members-card">
+    <div class="section-head">
+      <div>
+        <h3>Workspace Members</h3>
+        <p>Update roles or remove members while keeping the owner protected.</p>
+      </div>
+    </div>
+
+    <p class="feedback error" *ngIf="actionError">{{ actionError }}</p>
+
+    <div class="member-list" *ngIf="members.length; else noMembers">
+      <article class="member-row" *ngFor="let member of members; trackBy: trackMember">
+        <div class="member-meta">
+          <div class="member-avatar">{{ member.email.charAt(0).toUpperCase() }}</div>
+          <div>
+            <h4>{{ member.email }}</h4>
+            <p>Joined {{ member.joinedAt | date: 'mediumDate' }}</p>
+          </div>
+        </div>
+
+        <div class="member-actions">
+          <select
+            [disabled]="member.role === 'owner'"
+            [ngModel]="member.role"
+            (ngModelChange)="updateMemberRole(member, $event)"
+          >
+            <option *ngFor="let role of availableRoles" [value]="role">{{ role }}</option>
+          </select>
+
+          <button type="button" class="secondary-btn" [disabled]="member.role === 'owner'" (click)="removeMember(member)">
+            Remove
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <ng-template #noMembers>
+      <div class="empty-state">
+        <h4>No members found</h4>
+        <p>Invite teammates to start collaborating in this workspace.</p>
+      </div>
+    </ng-template>
+  </section>
+
+  <section class="invitations-card">
+    <div class="section-head">
+      <div>
+        <h3>Pending Invitations</h3>
+        <p>Track open invites, copy links again, or cancel invitations that are no longer needed.</p>
+      </div>
+    </div>
+
+    <div class="invitation-list" *ngIf="invitations.length; else noInvites">
+      <article class="invitation-row" *ngFor="let invitation of invitations; trackBy: trackInvitation">
+        <div>
+          <h4>{{ invitation.email }}</h4>
+          <p>{{ invitation.role }} • expires {{ invitation.expiresAt | date: 'mediumDate' }}</p>
+        </div>
+
+        <div class="member-actions">
+          <button type="button" class="secondary-btn" (click)="resendInvitation(invitation)">Resend</button>
+          <button type="button" class="danger-btn" (click)="cancelInvitation(invitation)">Cancel</button>
+        </div>
+      </article>
+    </div>
+
+    <ng-template #noInvites>
+      <div class="empty-state">
+        <h4>No pending invitations</h4>
+        <p>New invitations will show up here until they are accepted or cancelled.</p>
+      </div>
+    </ng-template>
+  </section>
+</section>
