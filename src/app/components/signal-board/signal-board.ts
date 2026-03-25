@@ -19,6 +19,34 @@ export class SignalBoardComponent {
   }
 
   getTypeLabel(signal: Signal): string {
+    if (signal.sourceType === 'slack') {
+      return 'Slack Message';
+    }
+
     return signal.metadata.type === 'pull_request' ? 'Pull Request' : 'Issue';
+  }
+
+  getSourceLabel(signal: Signal): string {
+    return signal.sourceType === 'slack' ? 'Slack' : 'GitHub';
+  }
+
+  getSourceClass(signal: Signal): string {
+    return signal.sourceType === 'slack' ? 'slack' : 'github';
+  }
+
+  getPrimaryContext(signal: Signal): string {
+    if (signal.sourceType === 'slack') {
+      return `#${this.getSlackChannel(signal)} in Slack`;
+    }
+
+    return `${this.getTypeLabel(signal)} #${signal.metadata.number} in ${signal.metadata.repository}`;
+  }
+
+  getOpenLabel(signal: Signal): string {
+    return signal.sourceType === 'slack' ? 'Open in Slack' : 'Open in GitHub';
+  }
+
+  getSlackChannel(signal: Signal): string {
+    return String(signal.metadata['channel'] ?? 'channel');
   }
 }

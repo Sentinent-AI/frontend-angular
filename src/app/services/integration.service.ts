@@ -1,11 +1,21 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { GitHubConnectionState, GitHubRepo, SyncStatus } from '../models/github-integration.model';
+import { SlackChannel, SlackConnectionState } from '../models/slack-integration.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class IntegrationService {
+  private slackState: SlackConnectionState = {
+    connected: false,
+    channels: [
+      { id: 'C123456', name: 'general', isConnected: true },
+      { id: 'C456789', name: 'engineering', isConnected: true },
+      { id: 'C987654', name: 'product-launch', isConnected: false }
+    ]
+  };
+
   private githubState: GitHubConnectionState = {
     connected: false,
     repos: [
@@ -16,6 +26,62 @@ export class IntegrationService {
   };
 
   private latestSync: SyncStatus | null = null;
+
+  getSlackAuthUrl(): Observable<{ authUrl: string }> {
+    return of({
+      authUrl: 'https://slack.com/oauth/v2/authorize?client_id=sentinent-demo&scope=channels:read%20chat:write&state=mock-state'
+    });
+  }
+
+  getSlackChannels(): Observable<{ connected: boolean; channels: SlackChannel[]; workspaceName?: string; workspaceUrl?: string; lastSyncAt?: Date }> {
+    return of({
+      connected: this.slackState.connected,
+      channels: this.slackState.channels,
+      workspaceName: this.slackState.workspaceName,
+      workspaceUrl: this.slackState.workspaceUrl,
+      lastSyncAt: this.slackState.lastSyncAt
+    });
+  }
+
+  connectSlack(): Observable<{ connected: boolean }> {
+    this.slackState = {
+      ...this.slackState,
+      connected: true,
+      workspaceName: 'Sentinent Ops',
+      workspaceUrl: 'sentinent.slack.com'
+    };
+
+    return of({ connected: true });
+  }
+
+  updateSlackChannels(channelIds: string[]): Observable<void> {
+    this.slackState = {
+      ...this.slackState,
+      channels: this.slackState.channels.map(channel => ({
+        ...channel,
+        isConnected: channelIds.includes(channel.id)
+      })),
+      lastSyncAt: new Date()
+    };
+
+    return of(void 0);
+  }
+
+  disconnectSlack(): Observable<void> {
+    this.slackState = {
+      ...this.slackState,
+      connected: false,
+      workspaceName: undefined,
+      workspaceUrl: undefined,
+      lastSyncAt: undefined,
+      channels: this.slackState.channels.map(channel => ({
+        ...channel,
+        isConnected: false
+      }))
+    };
+
+    return of(void 0);
+  }
 
   getGitHubAuthUrl(): Observable<{ authUrl: string }> {
     return of({

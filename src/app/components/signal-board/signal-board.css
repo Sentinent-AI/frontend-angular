@@ -31,6 +31,14 @@
   font-weight: 700;
 }
 
+.signal-source.slack {
+  background: #7c3aed;
+}
+
+.signal-source.github {
+  background: #111827;
+}
+
 .signal-card h3 {
   margin: 0;
   font-size: 1.05rem;

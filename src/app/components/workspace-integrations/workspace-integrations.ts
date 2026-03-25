@@ -3,6 +3,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { IntegrationService } from '../../services/integration.service';
 import { GitHubRepo, SyncStatus } from '../../models/github-integration.model';
+import { SlackChannel } from '../../models/slack-integration.model';
 
 @Component({
   selector: 'app-workspace-integrations',
@@ -16,29 +17,58 @@ export class WorkspaceIntegrationsComponent implements OnInit {
   private readonly integrationService = inject(IntegrationService);
 
   workspaceId = '';
+  slackChannels: SlackChannel[] = [];
+  selectedSlackChannelIds: string[] = [];
+  isSlackConnected = false;
+  slackWorkspaceName = '';
+  slackWorkspaceUrl = '';
+  slackLastSyncAt?: Date;
+  slackFeedbackMessage = '';
+  slackErrorMessage = '';
+  isSlackSaving = false;
+
   repos: GitHubRepo[] = [];
   selectedRepoIds: number[] = [];
-  isConnected = false;
+  isGitHubConnected = false;
   accountName = '';
   accountHandle = '';
-  lastSyncAt?: Date;
-  syncStatus?: SyncStatus;
-  feedbackMessage = '';
-  errorMessage = '';
-  isSaving = false;
+  githubLastSyncAt?: Date;
+  githubSyncStatus?: SyncStatus;
+  githubFeedbackMessage = '';
+  githubErrorMessage = '';
+  isGitHubSaving = false;
   isSyncing = false;
 
   ngOnInit(): void {
     this.workspaceId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.loadSlackChannels();
     this.loadRepos();
   }
 
+  connectSlack(): void {
+    this.slackErrorMessage = '';
+    this.slackFeedbackMessage = 'Starting Slack connection...';
+    this.integrationService.getSlackAuthUrl().subscribe(() => {
+      this.integrationService.connectSlack().subscribe(() => {
+        this.slackFeedbackMessage = 'Slack workspace connected. Choose the channels you want to monitor.';
+        this.loadSlackChannels();
+      });
+    });
+  }
+
+  disconnectSlack(): void {
+    this.integrationService.disconnectSlack().subscribe(() => {
+      this.slackFeedbackMessage = 'Slack integration disconnected.';
+      this.loadSlackChannels();
+    });
+  }
+
   connectGitHub(): void {
-    this.errorMessage = '';
-    this.feedbackMessage = 'Starting GitHub connection...';
+    this.githubErrorMessage = '';
+    this.githubFeedbackMessage = 'Starting GitHub connection...';
     this.integrationService.getGitHubAuthUrl().subscribe(() => {
       this.integrationService.connectGitHub().subscribe(() => {
-        this.feedbackMessage = 'GitHub account connected. Select the repositories you want Sentinent to monitor.';
+        this.githubFeedbackMessage = 'GitHub account connected. Select the repositories you want Sentinent to monitor.';
         this.loadRepos();
       });
     });
@@ -46,10 +76,21 @@ export class WorkspaceIntegrationsComponent implements OnInit {
 
   disconnectGitHub(): void {
     this.integrationService.disconnectGitHub().subscribe(() => {
-      this.syncStatus = undefined;
-      this.feedbackMessage = 'GitHub integration disconnected.';
+      this.githubSyncStatus = undefined;
+      this.githubFeedbackMessage = 'GitHub integration disconnected.';
       this.loadRepos();
     });
+  }
+
+  toggleSlackChannel(channelId: string, checked: boolean): void {
+    this.selectedSlackChannelIds = checked
+      ? [...this.selectedSlackChannelIds, channelId]
+      : this.selectedSlackChannelIds.filter(id => id !== channelId);
+  }
+
+  onSlackChannelToggle(channelId: string, event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    this.toggleSlackChannel(channelId, input?.checked ?? false);
   }
 
   toggleRepo(repoId: number, checked: boolean): void {
@@ -63,55 +104,86 @@ export class WorkspaceIntegrationsComponent implements OnInit {
     this.toggleRepo(repoId, input?.checked ?? false);
   }
 
+  saveSlackChannelSelection(): void {
+    this.isSlackSaving = true;
+    this.slackErrorMessage = '';
+    this.integrationService.updateSlackChannels(this.selectedSlackChannelIds).subscribe({
+      next: () => {
+        this.isSlackSaving = false;
+        this.slackFeedbackMessage = 'Slack channel selection saved.';
+        this.loadSlackChannels();
+      },
+      error: () => {
+        this.isSlackSaving = false;
+        this.slackErrorMessage = 'Could not save Slack channel selection.';
+      }
+    });
+  }
+
   saveRepoSelection(): void {
-    this.isSaving = true;
-    this.errorMessage = '';
+    this.isGitHubSaving = true;
+    this.githubErrorMessage = '';
     this.integrationService.updateGitHubRepos(this.selectedRepoIds).subscribe({
       next: () => {
-        this.isSaving = false;
-        this.feedbackMessage = 'Repository selection saved.';
+        this.isGitHubSaving = false;
+        this.githubFeedbackMessage = 'Repository selection saved.';
         this.loadRepos();
       },
       error: () => {
-        this.isSaving = false;
-        this.errorMessage = 'Could not save repository selection.';
+        this.isGitHubSaving = false;
+        this.githubErrorMessage = 'Could not save repository selection.';
       }
     });
   }
 
   syncNow(): void {
     this.isSyncing = true;
-    this.errorMessage = '';
+    this.githubErrorMessage = '';
     this.integrationService.syncGitHub().subscribe({
       next: ({ syncId }) => {
         this.integrationService.getSyncStatus(syncId).subscribe(status => {
-          this.syncStatus = status;
+          this.githubSyncStatus = status;
           this.isSyncing = false;
-          this.lastSyncAt = status.completedAt;
-          this.feedbackMessage = status.status === 'completed'
+          this.githubLastSyncAt = status.completedAt;
+          this.githubFeedbackMessage = status.status === 'completed'
             ? `Sync completed. ${status.itemsSynced ?? 0} items refreshed.`
             : 'GitHub sync failed.';
         });
       },
       error: (error: Error) => {
         this.isSyncing = false;
-        this.errorMessage = error.message;
+        this.githubErrorMessage = error.message;
       }
     });
+  }
+
+  isSlackChannelSelected(channelId: string): boolean {
+    return this.selectedSlackChannelIds.includes(channelId);
   }
 
   isRepoSelected(repoId: number): boolean {
     return this.selectedRepoIds.includes(repoId);
   }
 
+  private loadSlackChannels(): void {
+    this.integrationService.getSlackChannels().subscribe(response => {
+      this.isSlackConnected = response.connected;
+      this.slackChannels = response.channels;
+      this.selectedSlackChannelIds = response.channels.filter(channel => channel.isConnected).map(channel => channel.id);
+      this.slackWorkspaceName = response.workspaceName ?? '';
+      this.slackWorkspaceUrl = response.workspaceUrl ?? '';
+      this.slackLastSyncAt = response.lastSyncAt;
+    });
+  }
+
   private loadRepos(): void {
     this.integrationService.getGitHubRepos().subscribe(response => {
-      this.isConnected = response.connected;
+      this.isGitHubConnected = response.connected;
       this.repos = response.repos;
       this.selectedRepoIds = response.repos.filter(repo => repo.isConnected).map(repo => repo.id);
       this.accountName = response.accountName ?? '';
       this.accountHandle = response.accountHandle ?? '';
-      this.lastSyncAt = response.lastSyncAt;
+      this.githubLastSyncAt = response.lastSyncAt;
     });
   }
 }

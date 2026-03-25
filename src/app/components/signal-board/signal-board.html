@@ -2,7 +2,7 @@
   <article class="signal-card" *ngFor="let signal of signals; trackBy: trackBySignal">
     <div class="signal-top">
       <div>
-        <span class="signal-source">GitHub</span>
+        <span class="signal-source" [ngClass]="getSourceClass(signal)">{{ getSourceLabel(signal) }}</span>
         <h3>{{ signal.title }}</h3>
       </div>
       <span class="signal-status" [class.unread]="signal.status === 'unread'">
@@ -10,13 +10,12 @@
       </span>
     </div>
 
-    <p class="signal-meta">
-      {{ getTypeLabel(signal) }} #{{ signal.metadata.number }} in {{ signal.metadata.repository }}
-    </p>
+    <p class="signal-meta">{{ getPrimaryContext(signal) }}</p>
     <p class="signal-body">{{ signal.content }}</p>
 
     <div class="signal-badges">
-      <span class="badge neutral">{{ signal.metadata.state }}</span>
+      <span class="badge neutral" *ngIf="signal.sourceType === 'github'">{{ signal.metadata.state }}</span>
+      <span class="badge neutral" *ngIf="signal.sourceType === 'slack'">#{{ getSlackChannel(signal) }}</span>
       <span class="badge" *ngFor="let label of signal.metadata.labels">{{ label }}</span>
     </div>
 
@@ -28,7 +27,7 @@
     </div>
 
     <div class="signal-actions">
-      <a class="link-btn" *ngIf="signal.url" [href]="signal.url" target="_blank" rel="noreferrer">Open in GitHub</a>
+      <a class="link-btn" *ngIf="signal.url" [href]="signal.url" target="_blank" rel="noreferrer">{{ getOpenLabel(signal) }}</a>
       <button type="button" class="ghost-btn" (click)="markAsRead.emit(signal.id)">Mark as read</button>
       <button type="button" class="ghost-btn" (click)="archive.emit(signal.id)">Archive</button>
     </div>

@@ -26,6 +26,7 @@ export class Dashboard implements OnInit {
   signals: Signal[] = [];
   filters: SignalFilters = { source: 'all', status: 'all' };
   githubBanner = '';
+  slackBanner = '';
 
   ngOnInit() {
     this.workspaceService.getWorkspaces().subscribe(ws => {
@@ -34,10 +35,16 @@ export class Dashboard implements OnInit {
 
     this.route.queryParamMap.subscribe(params => {
       const githubStatus = params.get('github');
+      const slackStatus = params.get('slack');
       this.githubBanner = githubStatus === 'connected'
         ? 'GitHub connected successfully. Review repository access in your workspace integrations.'
         : githubStatus === 'error'
           ? 'GitHub connection failed. Please try the OAuth flow again.'
+          : '';
+      this.slackBanner = slackStatus === 'connected'
+        ? 'Slack connected successfully. Choose the channels you want Sentinent to monitor.'
+        : slackStatus === 'error'
+          ? 'Slack connection failed. Please try the OAuth flow again.'
           : '';
     });
 
