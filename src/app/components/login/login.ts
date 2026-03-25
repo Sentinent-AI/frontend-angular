@@ -14,6 +14,8 @@ import { AuthService } from '../../services/auth';
   styleUrl: './login.css',
 })
 export class Login implements OnInit {
+  private readonly emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   activeTab: 'login' | 'register' = 'login';
 
   loginEmail = '';
@@ -21,6 +23,7 @@ export class Login implements OnInit {
   rememberMe = true;
   loginError = '';
   registerError = '';
+  forgotError = '';
 
   regEmail = '';
   regPassword = '';
@@ -68,6 +71,7 @@ export class Login implements OnInit {
   showForgotPassword(): void {
     this.showForgot = true;
     this.showSuccess = false;
+    this.forgotError = '';
   }
 
   backToLogin(): void {
@@ -78,6 +82,10 @@ export class Login implements OnInit {
     this.loginError = '';
     if (!this.loginEmail.trim() || !this.loginPassword.trim()) {
       this.loginError = 'Invalid credentials';
+      return;
+    }
+    if (!this.isValidEmail(this.loginEmail)) {
+      this.loginError = 'Enter a valid email address';
       return;
     }
     this.isLoginSubmitting = true;
@@ -110,6 +118,10 @@ export class Login implements OnInit {
   handleRegister(): void {
     if (!this.regEmail.trim() || !this.regPassword.trim()) {
       this.registerError = 'Invalid credentials';
+      return;
+    }
+    if (!this.isValidEmail(this.regEmail)) {
+      this.registerError = 'Enter a valid email address';
       return;
     }
     this.isRegisterSubmitting = true;
@@ -158,6 +170,11 @@ export class Login implements OnInit {
   }
 
   handleForgot(): void {
+    this.forgotError = '';
+    if (!this.isValidEmail(this.forgotEmail)) {
+      this.forgotError = 'Enter a valid email address';
+      return;
+    }
     this.isForgotSubmitting = true;
     setTimeout(() => {
       this.isForgotSubmitting = false;
@@ -182,7 +199,7 @@ export class Login implements OnInit {
   }
 
   get isRegisterDisabled(): boolean {
-    return !this.regEmail.trim() || !this.regPassword;
+    return !this.regEmail.trim() || !this.regPassword || !this.isValidEmail(this.regEmail);
   }
 
   get isAuthFormVisible(): boolean {
@@ -222,7 +239,11 @@ export class Login implements OnInit {
   }
 
   onForgotEmailInput(): void {
-    this.clearGlobalError();
+    this.forgotError = '';
+  }
+
+  private isValidEmail(email: string): boolean {
+    return this.emailPattern.test(email.trim());
   }
 
   private syncView(): void {
