@@ -1,172 +1,234 @@
-import { Injectable } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { GitHubConnectionState, GitHubRepo, SyncStatus } from '../models/github-integration.model';
-import { SlackChannel, SlackConnectionState } from '../models/slack-integration.model';
+import { SlackConnectionState } from '../models/slack-integration.model';
+import { toError } from './http-error';
+
+interface IntegrationRecord {
+  id: number;
+  provider: 'slack' | 'github';
+  workspace_id?: number;
+  metadata?: string;
+  updated_at: string;
+}
+
+interface SlackChannelsResponse {
+  channels: Array<{
+    id: string;
+    name: string;
+  }>;
+}
+
+interface GitHubRepoResponse {
+  id: number;
+  name: string;
+  full_name: string;
+  owner?: {
+    login?: string;
+  };
+}
+
+interface OAuthResponse {
+  auth_url: string;
+}
+
+interface GitHubSyncResponse {
+  status: string;
+}
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class IntegrationService {
-  private slackState: SlackConnectionState = {
-    connected: false,
-    channels: [
-      { id: 'C123456', name: 'general', isConnected: true },
-      { id: 'C456789', name: 'engineering', isConnected: true },
-      { id: 'C987654', name: 'product-launch', isConnected: false }
-    ]
-  };
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = '/api/integrations';
 
-  private githubState: GitHubConnectionState = {
-    connected: false,
-    repos: [
-      { id: 101, name: 'frontend-angular', fullName: 'Sentinent-AI/frontend-angular', isConnected: true },
-      { id: 102, name: 'backend-go', fullName: 'Sentinent-AI/backend-go', isConnected: false },
-      { id: 103, name: 'Sentinent', fullName: 'Sentinent-AI/Sentinent', isConnected: true }
-    ]
-  };
-
-  private latestSync: SyncStatus | null = null;
-
-  getSlackAuthUrl(): Observable<{ authUrl: string }> {
-    return of({
-      authUrl: 'https://slack.com/oauth/v2/authorize?client_id=sentinent-demo&scope=channels:read%20chat:write&state=mock-state'
-    });
+  getSlackAuthUrl(workspaceId: string): Observable<{ authUrl: string }> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.get<OAuthResponse>(`${this.apiUrl}/slack/auth`, { params }).pipe(
+      map((response) => ({ authUrl: response.auth_url })),
+      catchError((error) => throwError(() => toError(error, 'Unable to start Slack connection.'))),
+    );
   }
 
-  getSlackChannels(): Observable<{ connected: boolean; channels: SlackChannel[]; workspaceName?: string; workspaceUrl?: string; lastSyncAt?: Date }> {
-    return of({
-      connected: this.slackState.connected,
-      channels: this.slackState.channels,
-      workspaceName: this.slackState.workspaceName,
-      workspaceUrl: this.slackState.workspaceUrl,
-      lastSyncAt: this.slackState.lastSyncAt
-    });
+  connectSlack(workspaceId: string): Observable<void> {
+    return this.getSlackAuthUrl(workspaceId).pipe(
+      map(({ authUrl }) => {
+        window.location.assign(authUrl);
+      }),
+    );
   }
 
-  connectSlack(): Observable<{ connected: boolean }> {
-    this.slackState = {
-      ...this.slackState,
-      connected: true,
-      workspaceName: 'Sentinent Ops',
-      workspaceUrl: 'sentinent.slack.com'
-    };
+  getSlackChannels(workspaceId: string): Observable<SlackConnectionState> {
+    return this.getIntegrations(workspaceId).pipe(
+      switchMap((integrations) => {
+        const slackIntegration = integrations.find((integration) => integration.provider === 'slack');
+        if (!slackIntegration) {
+          return of({
+            connected: false,
+            channels: [],
+          });
+        }
 
-    return of({ connected: true });
+        const metadata = this.parseMetadata(slackIntegration.metadata);
+        const params = new HttpParams().set('integration_id', String(slackIntegration.id));
+
+        return this.http.get<SlackChannelsResponse>(`${this.apiUrl}/slack/channels`, { params }).pipe(
+          map((response) => ({
+            connected: true,
+            workspaceName: this.readString(metadata['team_name']),
+            workspaceUrl: this.readString(metadata['team_domain']),
+            channels: response.channels.map((channel) => ({
+              id: channel.id,
+              name: channel.name,
+              isConnected: this.readStringArray(metadata['selected_channels']).includes(channel.id),
+            })),
+            lastSyncAt: slackIntegration.updated_at ? new Date(slackIntegration.updated_at) : undefined,
+          })),
+        );
+      }),
+      catchError((error) => throwError(() => toError(error, 'Unable to load Slack channels.'))),
+    );
   }
 
-  updateSlackChannels(channelIds: string[]): Observable<void> {
-    this.slackState = {
-      ...this.slackState,
-      channels: this.slackState.channels.map(channel => ({
-        ...channel,
-        isConnected: channelIds.includes(channel.id)
-      })),
-      lastSyncAt: new Date()
-    };
-
-    return of(void 0);
+  updateSlackChannels(workspaceId: string, channelIds: string[]): Observable<void> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http
+      .patch<void>(`${this.apiUrl}/slack/channels`, { channel_ids: channelIds }, { params })
+      .pipe(
+        catchError((error) => throwError(() => toError(error, 'Unable to save Slack channel selection.'))),
+      );
   }
 
-  disconnectSlack(): Observable<void> {
-    this.slackState = {
-      ...this.slackState,
-      connected: false,
-      workspaceName: undefined,
-      workspaceUrl: undefined,
-      lastSyncAt: undefined,
-      channels: this.slackState.channels.map(channel => ({
-        ...channel,
-        isConnected: false
-      }))
-    };
-
-    return of(void 0);
+  disconnectSlack(workspaceId: string): Observable<void> {
+    return this.getIntegrations(workspaceId).pipe(
+      switchMap((integrations) => {
+        const slackIntegration = integrations.find((integration) => integration.provider === 'slack');
+        if (!slackIntegration) {
+          return of(void 0);
+        }
+        return this.http.delete<void>(`${this.apiUrl}/${slackIntegration.id}`);
+      }),
+      catchError((error) => throwError(() => toError(error, 'Unable to disconnect Slack.'))),
+    );
   }
 
   getGitHubAuthUrl(): Observable<{ authUrl: string }> {
-    return of({
-      authUrl: 'https://github.com/login/oauth/authorize?client_id=sentinent-demo&scope=read:user%20read:org%20repo&state=mock-state'
-    });
+    return this.http.get<OAuthResponse>(`${this.apiUrl}/github/auth`).pipe(
+      map((response) => ({ authUrl: response.auth_url })),
+      catchError((error) => throwError(() => toError(error, 'Unable to start GitHub connection.'))),
+    );
   }
 
-  getGitHubRepos(): Observable<{ connected: boolean; repos: GitHubRepo[]; accountName?: string; accountHandle?: string; lastSyncAt?: Date }> {
-    return of({
-      connected: this.githubState.connected,
-      repos: this.githubState.repos,
-      accountName: this.githubState.accountName,
-      accountHandle: this.githubState.accountHandle,
-      lastSyncAt: this.githubState.lastSyncAt
-    });
+  connectGitHub(): Observable<void> {
+    return this.getGitHubAuthUrl().pipe(
+      map(({ authUrl }) => {
+        window.location.assign(authUrl);
+      }),
+    );
   }
 
-  connectGitHub(): Observable<{ connected: boolean }> {
-    this.githubState = {
-      ...this.githubState,
-      connected: true,
-      accountName: 'Sentinent Engineering',
-      accountHandle: '@sentinent-dev'
-    };
+  getGitHubRepos(): Observable<GitHubConnectionState> {
+    return this.getIntegrations().pipe(
+      switchMap((integrations) => {
+        const githubIntegration = integrations.find((integration) => integration.provider === 'github');
+        if (!githubIntegration) {
+          return of({
+            connected: false,
+            repos: [],
+          });
+        }
 
-    return of({ connected: true });
+        const metadata = this.parseMetadata(githubIntegration.metadata);
+        const selectedRepoIds = this.readNumberArray(metadata['selected_repo_ids']);
+
+        return this.http.get<GitHubRepoResponse[]>(`${this.apiUrl}/github/repos`).pipe(
+          map((repos) => ({
+            connected: true,
+            repos: repos.map((repo) => this.mapGitHubRepo(repo, selectedRepoIds)),
+            accountName: repos[0]?.owner?.login ?? undefined,
+            accountHandle: repos[0]?.owner?.login ? `@${repos[0].owner.login}` : undefined,
+            lastSyncAt: githubIntegration.updated_at ? new Date(githubIntegration.updated_at) : undefined,
+          })),
+        );
+      }),
+      catchError((error) => throwError(() => toError(error, 'Unable to load GitHub repositories.'))),
+    );
   }
 
   updateGitHubRepos(repoIds: number[]): Observable<void> {
-    this.githubState = {
-      ...this.githubState,
-      repos: this.githubState.repos.map(repo => ({
-        ...repo,
-        isConnected: repoIds.includes(repo.id)
-      }))
-    };
-
-    return of(void 0);
+    return this.http.patch<void>(`${this.apiUrl}/github/repos`, { repo_ids: repoIds }).pipe(
+      catchError((error) => throwError(() => toError(error, 'Unable to save repository selection.'))),
+    );
   }
 
   disconnectGitHub(): Observable<void> {
-    this.githubState = {
-      ...this.githubState,
-      connected: false,
-      accountName: undefined,
-      accountHandle: undefined,
-      lastSyncAt: undefined,
-      repos: this.githubState.repos.map(repo => ({
-        ...repo,
-        isConnected: false
-      }))
-    };
-    this.latestSync = null;
-
-    return of(void 0);
+    return this.http.delete<void>(`${this.apiUrl}/github`).pipe(
+      catchError((error) => throwError(() => toError(error, 'Unable to disconnect GitHub.'))),
+    );
   }
 
-  syncGitHub(): Observable<{ syncId: string }> {
-    if (!this.githubState.connected) {
-      return throwError(() => new Error('Connect GitHub before starting a sync.'));
-    }
-
-    const syncId = `sync-${Date.now()}`;
-    this.latestSync = {
-      syncId,
-      status: 'completed',
-      itemsSynced: this.githubState.repos.filter(repo => repo.isConnected).length * 6,
-      completedAt: new Date()
-    };
-    this.githubState = {
-      ...this.githubState,
-      lastSyncAt: this.latestSync.completedAt
-    };
-
-    return of({ syncId });
+  syncGitHub(): Observable<SyncStatus> {
+    return this.http.post<GitHubSyncResponse>(`${this.apiUrl}/github/sync`, {}).pipe(
+      map((response) => {
+        const status: SyncStatus['status'] = response.status === 'sync_started' ? 'in_progress' : 'failed';
+        return {
+          syncId: `sync-${Date.now()}`,
+          status,
+        };
+      }),
+      catchError((error) => throwError(() => toError(error, 'Unable to sync GitHub.'))),
+    );
   }
 
-  getSyncStatus(syncId: string): Observable<SyncStatus> {
-    if (this.latestSync && this.latestSync.syncId === syncId) {
-      return of(this.latestSync);
+  private getIntegrations(workspaceId?: string): Observable<IntegrationRecord[]> {
+    let params = new HttpParams();
+    if (workspaceId) {
+      params = params.set('workspace_id', workspaceId);
     }
 
-    return of({
-      syncId,
-      status: 'failed'
-    });
+    return this.http.get<IntegrationRecord[]>(this.apiUrl, { params }).pipe(
+      catchError((error) => {
+        if (error.status === 404) {
+          return of([]);
+        }
+        return throwError(() => toError(error, 'Unable to load integrations.'));
+      }),
+    );
+  }
+
+  private parseMetadata(metadata?: string): Record<string, unknown> {
+    if (!metadata) {
+      return {};
+    }
+
+    try {
+      const parsed = JSON.parse(metadata);
+      return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private readString(value: unknown): string | undefined {
+    return typeof value === 'string' && value.trim() ? value : undefined;
+  }
+
+  private readStringArray(value: unknown): string[] {
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+  }
+
+  private readNumberArray(value: unknown): number[] {
+    return Array.isArray(value) ? value.filter((item): item is number => typeof item === 'number') : [];
+  }
+
+  private mapGitHubRepo(repo: GitHubRepoResponse, selectedRepoIds: number[]): GitHubRepo {
+    return {
+      id: repo.id,
+      name: repo.name,
+      fullName: repo.full_name,
+      isConnected: selectedRepoIds.includes(repo.id),
+    };
   }
 }

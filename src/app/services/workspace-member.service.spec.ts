@@ -1,129 +1,111 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { WorkspaceMemberService } from './workspace-member.service';
-import { Invitation, WorkspaceMember } from '../models/workspace-member.model';
 
 describe('WorkspaceMemberService', () => {
   let service: WorkspaceMemberService;
+  let httpMock: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [WorkspaceMemberService, provideHttpClient(), provideHttpClientTesting()],
+    });
+
     service = TestBed.inject(WorkspaceMemberService);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
-  it('returns members for a workspace', () => {
-    let members: WorkspaceMember[] = [];
+  afterEach(() => {
+    httpMock.verify();
+  });
 
-    service.getMembers('1').subscribe(result => {
+  it('maps workspace members from the backend response', () => {
+    let members: Array<{ userId: number; joinedAt: Date }> = [];
+
+    service.getMembers('1').subscribe((result) => {
       members = result;
     });
 
-    expect(members.length).toBe(3);
-    expect(members.map(member => member.email)).toContain('owner@example.com');
+    const request = httpMock.expectOne('/api/workspaces/1/members');
+    expect(request.request.method).toBe('GET');
+    request.flush([
+      {
+        user_id: 2,
+        email: 'member@example.com',
+        role: 'member',
+        joined_at: '2026-03-20T00:00:00Z',
+      },
+    ]);
+
+    expect(members.length).toBe(1);
+    expect(members[0].userId).toBe(2);
+    expect(members[0].joinedAt instanceof Date).toBeTrue();
   });
 
-  it('creates an invitation for a new member', () => {
-    let invitation: Invitation | undefined;
+  it('creates an invitation and exposes the token for the UI link', () => {
+    let invitationToken = '';
 
-    service.inviteMember('1', 'designer@example.com', 'viewer').subscribe(result => {
-      invitation = result;
+    service.inviteMember('1', 'designer@example.com', 'viewer').subscribe((result) => {
+      invitationToken = result.token;
     });
 
-    expect(invitation?.email).toBe('designer@example.com');
-
-    let invitations: Invitation[] = [];
-    service.getPendingInvitations('1').subscribe(result => {
-      invitations = result;
+    const request = httpMock.expectOne('/api/workspaces/1/invitations');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({
+      email: 'designer@example.com',
+      role: 'viewer',
+    });
+    request.flush({
+      id: 7,
+      email: 'designer@example.com',
+      token: 'invite-token',
+      role: 'viewer',
+      expires_at: '2026-04-01T00:00:00Z',
+      created_at: '2026-03-24T00:00:00Z',
     });
 
-    expect(invitations.some(item => item.email === 'designer@example.com')).toBeTrue();
+    expect(invitationToken).toBe('invite-token');
   });
 
-  it('rejects duplicate invitations or existing members', () => {
-    let errorMessage = '';
+  it('maps invitation validation into the frontend shape', () => {
+    let invitedBy = '';
 
-    service.inviteMember('1', 'owner@example.com', 'member').subscribe({
-      next: () => fail('expected duplicate invite to fail'),
-      error: error => {
-        errorMessage = error.message;
-      }
+    service.validateInvitation('invite-token').subscribe((result) => {
+      invitedBy = result.invitedBy.email;
     });
 
-    expect(errorMessage).toContain('already a member');
+    const request = httpMock.expectOne('/api/invitations/invite-token');
+    expect(request.request.method).toBe('GET');
+    request.flush({
+      valid: true,
+      workspace: {
+        id: 1,
+        name: 'Engineering',
+      },
+      invited_by: {
+        email: 'owner@example.com',
+      },
+      role: 'member',
+    });
+
+    expect(invitedBy).toBe('owner@example.com');
   });
 
-  it('updates the role for a non-owner member', () => {
-    let updatedRole = '';
+  it('maps accepted invitations back to the workspace route id', () => {
+    let workspaceId = '';
 
-    service.updateRole('1', 2, 'viewer').subscribe(result => {
-      updatedRole = result.role;
+    service.acceptInvitation('invite-token').subscribe((result) => {
+      workspaceId = result.workspaceId;
     });
 
-    expect(updatedRole).toBe('viewer');
-  });
-
-  it('rejects owner role changes', () => {
-    let errorMessage = '';
-
-    service.updateRole('1', 1, 'member').subscribe({
-      next: () => fail('expected owner update to fail'),
-      error: error => {
-        errorMessage = error.message;
-      }
+    const request = httpMock.expectOne('/api/invitations/invite-token/accept');
+    expect(request.request.method).toBe('POST');
+    request.flush({
+      workspace_id: 12,
+      role: 'viewer',
     });
 
-    expect(errorMessage).toContain("owner's role");
-  });
-
-  it('removes a non-owner member', () => {
-    let members: WorkspaceMember[] = [];
-
-    service.removeMember('1', 3).subscribe();
-    service.getMembers('1').subscribe(result => {
-      members = result;
-    });
-
-    expect(members.some(member => member.userId === 3)).toBeFalse();
-  });
-
-  it('rejects owner removal', () => {
-    let errorMessage = '';
-
-    service.removeMember('1', 1).subscribe({
-      next: () => fail('expected owner removal to fail'),
-      error: error => {
-        errorMessage = error.message;
-      }
-    });
-
-    expect(errorMessage).toContain('Cannot remove workspace owner');
-  });
-
-  it('validates an invitation token', () => {
-    let role = '';
-
-    service.validateInvitation('invite_token_member').subscribe(result => {
-      role = result.role;
-    });
-
-    expect(role).toBe('member');
-  });
-
-  it('accepts a valid invitation for a new user', () => {
-    let acceptedWorkspaceId = '';
-
-    (service as any).currentUserEmail = 'newuser@example.com';
-
-    service.acceptInvitation('invite_token_viewer').subscribe(result => {
-      acceptedWorkspaceId = result.workspaceId;
-    });
-
-    expect(acceptedWorkspaceId).toBe('1');
-
-    let members: WorkspaceMember[] = [];
-    service.getMembers('1').subscribe(result => {
-      members = result;
-    });
-
-    expect(members.some(member => member.email === 'newuser@example.com' && member.role === 'viewer')).toBeTrue();
+    expect(workspaceId).toBe('12');
   });
 });

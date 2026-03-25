@@ -11,18 +11,15 @@ describe('WorkspaceIntegrationsComponent', () => {
 
   beforeEach(async () => {
     mockIntegrationService = jasmine.createSpyObj<IntegrationService>('IntegrationService', [
-      'getSlackAuthUrl',
       'getSlackChannels',
       'connectSlack',
       'updateSlackChannels',
       'disconnectSlack',
-      'getGitHubAuthUrl',
       'getGitHubRepos',
       'connectGitHub',
       'updateGitHubRepos',
       'disconnectGitHub',
-      'syncGitHub',
-      'getSyncStatus'
+      'syncGitHub'
     ]);
 
     mockIntegrationService.getSlackChannels.and.returnValue(of({
@@ -36,8 +33,7 @@ describe('WorkspaceIntegrationsComponent', () => {
     }));
     mockIntegrationService.updateSlackChannels.and.returnValue(of(void 0));
     mockIntegrationService.disconnectSlack.and.returnValue(of(void 0));
-    mockIntegrationService.getSlackAuthUrl.and.returnValue(of({ authUrl: 'https://slack.com/mock' }));
-    mockIntegrationService.connectSlack.and.returnValue(of({ connected: true }));
+    mockIntegrationService.connectSlack.and.returnValue(of(void 0));
 
     mockIntegrationService.getGitHubRepos.and.returnValue(of({
       connected: true,
@@ -49,16 +45,9 @@ describe('WorkspaceIntegrationsComponent', () => {
       lastSyncAt: new Date('2026-03-23T10:00:00Z')
     }));
     mockIntegrationService.updateGitHubRepos.and.returnValue(of(void 0));
-    mockIntegrationService.syncGitHub.and.returnValue(of({ syncId: 'sync-1' }));
-    mockIntegrationService.getSyncStatus.and.returnValue(of({
-      syncId: 'sync-1',
-      status: 'completed',
-      itemsSynced: 6,
-      completedAt: new Date('2026-03-23T10:05:00Z')
-    }));
+    mockIntegrationService.syncGitHub.and.returnValue(of({ syncId: 'sync-1', status: 'in_progress' }));
     mockIntegrationService.disconnectGitHub.and.returnValue(of(void 0));
-    mockIntegrationService.getGitHubAuthUrl.and.returnValue(of({ authUrl: 'https://github.com/mock' }));
-    mockIntegrationService.connectGitHub.and.returnValue(of({ connected: true }));
+    mockIntegrationService.connectGitHub.and.returnValue(of(void 0));
 
     await TestBed.configureTestingModule({
       imports: [WorkspaceIntegrationsComponent],
@@ -93,13 +82,13 @@ describe('WorkspaceIntegrationsComponent', () => {
     fixture.detectChanges();
 
     expect(mockIntegrationService.syncGitHub).toHaveBeenCalled();
-    expect(component.githubFeedbackMessage).toContain('6 items refreshed');
+    expect(component.githubFeedbackMessage).toContain('started');
   });
 
   it('should save slack channel selection', () => {
     component.saveSlackChannelSelection();
 
-    expect(mockIntegrationService.updateSlackChannels).toHaveBeenCalled();
+    expect(mockIntegrationService.updateSlackChannels).toHaveBeenCalledWith('workspace-1', ['C123']);
     expect(component.slackFeedbackMessage).toContain('saved');
   });
 });

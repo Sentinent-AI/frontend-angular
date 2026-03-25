@@ -47,8 +47,12 @@ export class DecisionFormComponent implements OnInit {
     }
 
     loadDecision(id: string): void {
+        if (!this.workspaceId) {
+            return;
+        }
+
         this.isLoading = true;
-        this.decisionService.getDecision(id).subscribe(decision => {
+        this.decisionService.getDecision(this.workspaceId, id).subscribe(decision => {
             this.isLoading = false;
             if (decision) {
                 this.decisionForm.patchValue({
@@ -71,7 +75,11 @@ export class DecisionFormComponent implements OnInit {
         const formValue = this.decisionForm.value;
 
         if (this.isEditMode && this.decisionId) {
-            this.decisionService.updateDecision(this.decisionId, formValue).subscribe(() => {
+            if (!this.workspaceId) {
+                return;
+            }
+
+            this.decisionService.updateDecision(this.workspaceId, this.decisionId, formValue).subscribe(() => {
                 this.router.navigate(['../../'], { relativeTo: this.route });
             });
         } else {
