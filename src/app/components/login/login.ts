@@ -1,5 +1,4 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -102,9 +101,9 @@ export class Login implements OnInit {
         this.syncView();
         setTimeout(() => this.router.navigate(['/dashboard']), 1200);
       },
-      error: (err: HttpErrorResponse) => {
-        const backendMessage = typeof err.error === 'string' ? err.error.toLowerCase() : '';
-        if (err.status === 401 || backendMessage.includes('invalid credentials')) {
+      error: (err: unknown) => {
+        const errorMessage = this.getErrorMessage(err);
+        if (errorMessage.includes('invalid login credentials') || errorMessage.includes('invalid credentials')) {
           this.loginError = 'Invalid credentials';
           this.syncView();
           return;
@@ -152,13 +151,13 @@ export class Login implements OnInit {
           this.syncView();
         }, 1500);
       },
-      error: (err: HttpErrorResponse) => {
+      error: (err: unknown) => {
         this.activeTab = 'register';
         this.showForgot = false;
         this.showSuccess = false;
 
-        const backendMessage = typeof err.error === 'string' ? err.error.toLowerCase() : '';
-        if (err.status === 409 || backendMessage.includes('already exists')) {
+        const errorMessage = this.getErrorMessage(err);
+        if (errorMessage.includes('already registered') || errorMessage.includes('already exists')) {
           this.registerError = 'Email already exists';
           this.syncView();
           return;
@@ -176,10 +175,23 @@ export class Login implements OnInit {
       return;
     }
     this.isForgotSubmitting = true;
-    setTimeout(() => {
-      this.isForgotSubmitting = false;
-      this.showSuccessMessage('Check your email', 'We sent a password reset link.');
-    }, 1200);
+
+    this.authService.resetPassword(this.forgotEmail.trim()).pipe(
+      timeout(8000),
+      finalize(() => {
+        this.isForgotSubmitting = false;
+        this.syncView();
+      })
+    ).subscribe({
+      next: () => {
+        this.showSuccessMessage('Check your email', 'We sent a password reset link.');
+        this.syncView();
+      },
+      error: () => {
+        this.forgotError = 'Unable to send reset link. Please try again.';
+        this.syncView();
+      }
+    });
   }
 
   private showSuccessMessage(title: string, text: string): void {
@@ -244,6 +256,14 @@ export class Login implements OnInit {
 
   private isValidEmail(email: string): boolean {
     return this.emailPattern.test(email.trim());
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message.toLowerCase();
+    }
+
+    return '';
   }
 
   private syncView(): void {

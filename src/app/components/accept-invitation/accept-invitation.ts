@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 import { InvitationValidation } from '../../models/workspace-member.model';
 import { AuthService } from '../../services/auth';
 import { WorkspaceMemberService } from '../../services/workspace-member.service';
@@ -37,23 +38,30 @@ export class AcceptInvitationComponent implements OnInit {
   }
 
   joinWorkspace(): void {
-    if (!this.authService.isLoggedIn()) {
-      this.router.navigate(['/login'], { queryParams: { redirectTo: `/invitations/${this.token}` } });
-      return;
-    }
-
-    this.isSubmitting = true;
-    this.workspaceMemberService.acceptInvitation(this.token).subscribe({
-      next: response => {
-        this.success = `You joined the workspace as ${response.role}. Redirecting now.`;
-        setTimeout(() => {
-          this.router.navigate(['/workspaces', response.workspaceId, 'decisions']);
-        }, 900);
-      },
-      error: (error: Error) => {
-        this.isSubmitting = false;
-        this.error = error.message;
+    this.authService.isLoggedIn().subscribe(isLoggedIn => {
+      if (!isLoggedIn) {
+        this.router.navigate(['/login'], { queryParams: { redirectTo: `/invitations/${this.token}` } });
+        return;
       }
+
+      this.isSubmitting = true;
+      this.workspaceMemberService.acceptInvitation(this.token).pipe(
+        finalize(() => {
+          if (!this.success) {
+            this.isSubmitting = false;
+          }
+        })
+      ).subscribe({
+        next: response => {
+          this.success = `You joined the workspace as ${response.role}. Redirecting now.`;
+          setTimeout(() => {
+            this.router.navigate(['/workspaces', response.workspaceId, 'decisions']);
+          }, 900);
+        },
+        error: (error: Error) => {
+          this.error = error.message;
+        }
+      });
     });
   }
 }

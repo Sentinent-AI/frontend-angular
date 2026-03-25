@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
+import { firstValueFrom, Observable, of } from 'rxjs';
 import { authGuard } from './auth-guard';
 import { AuthService } from '../services/auth';
 
@@ -19,21 +20,29 @@ describe('authGuard', () => {
     });
   });
 
-  it('returns true when the user is logged in', () => {
-    mockAuthService.isLoggedIn.and.returnValue(true);
+  it('returns true when the user is logged in', async () => {
+    mockAuthService.isLoggedIn.and.returnValue(of(true));
 
-    const result = TestBed.runInInjectionContext(() => authGuard({} as never, {} as never));
+    await TestBed.runInInjectionContext(async () => {
+      const result = await firstValueFrom(
+        authGuard({} as never, {} as never) as Observable<boolean>
+      );
 
-    expect(result).toBeTrue();
-    expect(mockRouter.navigate).not.toHaveBeenCalled();
+      expect(result).toBeTrue();
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
+    });
   });
 
-  it('redirects to login when the user is not logged in', () => {
-    mockAuthService.isLoggedIn.and.returnValue(false);
+  it('redirects to login when the user is not logged in', async () => {
+    mockAuthService.isLoggedIn.and.returnValue(of(false));
 
-    const result = TestBed.runInInjectionContext(() => authGuard({} as never, {} as never));
+    await TestBed.runInInjectionContext(async () => {
+      const result = await firstValueFrom(
+        authGuard({} as never, {} as never) as Observable<boolean>
+      );
 
-    expect(result).toBeFalse();
-    expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
+      expect(result).toBeFalse();
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
+    });
   });
 });

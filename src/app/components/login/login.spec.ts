@@ -1,8 +1,8 @@
 import { DOCUMENT } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+import { Session } from '@supabase/supabase-js';
 import { of, throwError } from 'rxjs';
 import { Login } from './login';
 import { AuthService } from '../../services/auth';
@@ -15,7 +15,7 @@ describe('Login', () => {
   let document: Document;
 
   beforeEach(async () => {
-    mockAuthService = jasmine.createSpyObj<AuthService>('AuthService', ['login', 'signup']);
+    mockAuthService = jasmine.createSpyObj<AuthService>('AuthService', ['login', 'signup', 'resetPassword']);
 
     spyOn(localStorage, 'getItem').and.returnValue(null);
     spyOn(localStorage, 'setItem');
@@ -92,7 +92,21 @@ describe('Login', () => {
 
   it('shows a success message and redirects after login', fakeAsync(() => {
     spyOn(router, 'navigate');
-    mockAuthService.login.and.returnValue(of({ token: 'token-1' }));
+    const session = {
+      access_token: 'access-token',
+      refresh_token: 'refresh-token',
+      expires_in: 3600,
+      expires_at: 9999999999,
+      token_type: 'bearer',
+      user: {
+        id: 'user-1',
+        app_metadata: {},
+        user_metadata: {},
+        aud: 'authenticated',
+        created_at: '2026-03-25T00:00:00.000Z'
+      }
+    } as Session;
+    mockAuthService.login.and.returnValue(of(session));
     component.loginEmail = 'user@example.com';
     component.loginPassword = 'secret';
 
@@ -107,7 +121,7 @@ describe('Login', () => {
 
   it('maps a 401 login response to invalid credentials', () => {
     mockAuthService.login.and.returnValue(
-      throwError(() => new HttpErrorResponse({ status: 401, error: 'invalid credentials' }))
+      throwError(() => new Error('Invalid login credentials'))
     );
     component.loginEmail = 'user@example.com';
     component.loginPassword = 'wrong';
@@ -148,7 +162,7 @@ describe('Login', () => {
 
   it('shows a duplicate email message when signup returns a conflict', () => {
     mockAuthService.signup.and.returnValue(
-      throwError(() => new HttpErrorResponse({ status: 409, error: 'already exists' }))
+      throwError(() => new Error('User already registered'))
     );
     component.activeTab = 'register';
     component.regEmail = 'user@example.com';
@@ -182,6 +196,29 @@ describe('Login', () => {
     component.handleForgot();
 
     expect(component.forgotError).toBe('Enter a valid email address');
+    expect(component.isForgotSubmitting).toBeFalse();
+  });
+
+  it('shows a success message after a password reset request', () => {
+    mockAuthService.resetPassword.and.returnValue(of(void 0));
+    component.showForgotPassword();
+    component.forgotEmail = 'user@example.com';
+
+    component.handleForgot();
+
+    expect(mockAuthService.resetPassword).toHaveBeenCalledWith('user@example.com');
+    expect(component.showSuccess).toBeTrue();
+    expect(component.successTitle).toBe('Check your email');
+  });
+
+  it('shows an error when the password reset request fails', () => {
+    mockAuthService.resetPassword.and.returnValue(throwError(() => new Error('Reset failed')));
+    component.showForgotPassword();
+    component.forgotEmail = 'user@example.com';
+
+    component.handleForgot();
+
+    expect(component.forgotError).toBe('Unable to send reset link. Please try again.');
     expect(component.isForgotSubmitting).toBeFalse();
   });
 });

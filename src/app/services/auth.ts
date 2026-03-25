@@ -1,47 +1,86 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpResponse } from '@angular/common/http';
-import { map, Observable, tap } from 'rxjs';
-
-interface AuthResponse {
-  token: string;
-}
+import { Injectable } from '@angular/core';
+import { Session } from '@supabase/supabase-js';
+import { from, map, Observable } from 'rxjs';
+import { supabase } from '../supabase';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private http = inject(HttpClient);
-  private apiUrl = '/api';
-  private tokenKey = 'sentinent_token';
-
   signup(email: string, password: string): Observable<void> {
-    return this.http.post(`${this.apiUrl}/signup`, { email, password }, {
-      observe: 'response',
-      responseType: 'text'
-    }).pipe(
-      map((_res: HttpResponse<string>) => undefined)
+    return from(supabase.auth.signUp({
+      email,
+      password
+    })).pipe(
+      map(({ error }) => {
+        if (error) {
+          throw this.normalizeError(error.message);
+        }
+        return undefined;
+      })
     );
   }
 
-  login(email: string, password: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password }).pipe(
-      tap(res => this.setToken(res.token))
+  login(email: string, password: string): Observable<Session> {
+    return from(supabase.auth.signInWithPassword({
+      email,
+      password
+    })).pipe(
+      map(({ data, error }) => {
+        if (error) {
+          throw this.normalizeError(error.message);
+        }
+        if (!data.session) {
+          throw this.normalizeError('Sign in failed. Please try again.');
+        }
+        return data.session;
+      })
     );
   }
 
-  logout(): void {
-    localStorage.removeItem(this.tokenKey);
+  resetPassword(email: string): Observable<void> {
+    return from(supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: environment.passwordResetRedirectUrl
+    })).pipe(
+      map(({ error }) => {
+        if (error) {
+          throw this.normalizeError(error.message);
+        }
+        return undefined;
+      })
+    );
   }
 
-  isLoggedIn(): boolean {
-    return !!this.getToken();
+  logout(): Observable<void> {
+    return from(supabase.auth.signOut()).pipe(
+      map(({ error }) => {
+        if (error) {
+          throw this.normalizeError(error.message);
+        }
+        return undefined;
+      })
+    );
   }
 
-  getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+  isLoggedIn(): Observable<boolean> {
+    return from(supabase.auth.getSession()).pipe(
+      map(({ data, error }) => {
+        if (error) {
+          return false;
+        }
+        return !!data.session;
+      })
+    );
   }
 
-  private setToken(token: string): void {
-    localStorage.setItem(this.tokenKey, token);
+  private normalizeError(message: string): Error {
+    const normalizedMessage = message.trim();
+
+    if (!normalizedMessage) {
+      return new Error('Authentication failed. Please try again.');
+    }
+
+    return new Error(normalizedMessage);
   }
 }
