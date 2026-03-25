@@ -27,7 +27,7 @@ describe('AcceptInvitationComponent', () => {
       role: 'member'
     }));
     mockWorkspaceMemberService.acceptInvitation.and.returnValue(of({ workspaceId: '1', role: 'member' }));
-    mockAuthService.isLoggedIn.and.returnValue(true);
+    mockAuthService.isLoggedIn.and.returnValue(of(true));
 
     await TestBed.configureTestingModule({
       imports: [AcceptInvitationComponent, RouterTestingModule],
@@ -65,7 +65,7 @@ describe('AcceptInvitationComponent', () => {
 
   it('should redirect to login when not authenticated', () => {
     spyOn(router, 'navigate');
-    mockAuthService.isLoggedIn.and.returnValue(false);
+    mockAuthService.isLoggedIn.and.returnValue(of(false));
 
     component.joinWorkspace();
 

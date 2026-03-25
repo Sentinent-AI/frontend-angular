@@ -12,6 +12,27 @@ ng serve
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
+## Supabase setup
+
+This frontend now uses Supabase for authentication.
+
+Update the following files with your Supabase project values before testing login or signup:
+
+```text
+src/environments/environment.ts
+src/environments/environment.development.ts
+```
+
+Set:
+
+```ts
+supabaseUrl: 'https://your-project-ref.supabase.co'
+supabaseAnonKey: 'your-supabase-anon-key'
+passwordResetRedirectUrl: 'http://localhost:4200/login'
+```
+
+In your Supabase dashboard, enable Email authentication for the project and make sure the redirect URL matches your local frontend URL.
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
