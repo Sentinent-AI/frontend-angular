@@ -1,5 +1,5 @@
 <section class="signals-board">
-  <article class="signal-card" *ngFor="let signal of signals; trackBy: trackBySignal">
+  <article class="signal-card" *ngFor="let signal of signals; trackBy: trackBySignal" [id]="'signal-' + signal.id">
     <div class="signal-top">
       <div>
         <span class="signal-source" [ngClass]="getSourceClass(signal)">{{ getSourceLabel(signal) }}</span>
