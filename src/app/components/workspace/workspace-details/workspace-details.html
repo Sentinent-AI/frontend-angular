@@ -9,6 +9,7 @@
 
     <nav class="workspace-nav">
         <a routerLink="decisions" routerLinkActive="active">Decisions</a>
+        <a [routerLink]="['/workspaces', workspace.id, 'settings', 'members']">Members</a>
         <a [routerLink]="['/workspaces', workspace.id, 'settings', 'integrations']">Integrations</a>
     </nav>
 
