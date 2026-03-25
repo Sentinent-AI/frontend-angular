@@ -29,6 +29,21 @@ describe('Dashboard', () => {
         mockSignalService = {
             getSignals: jasmine.createSpy('getSignals').and.returnValue(of([
                 {
+                    id: 'slack-1',
+                    sourceType: 'slack',
+                    sourceId: 'C123456',
+                    externalId: '1',
+                    title: 'Test Slack Signal',
+                    content: 'Slack signal content',
+                    author: '@ops',
+                    status: 'unread',
+                    receivedAt: new Date(),
+                    metadata: {
+                        channel: 'general',
+                        channelId: 'C123456'
+                    }
+                },
+                {
                     id: 'github-1',
                     sourceType: 'github',
                     sourceId: 'Sentinent-AI/frontend-angular',
@@ -85,5 +100,11 @@ describe('Dashboard', () => {
     it('should render github signals', () => {
         const compiled = fixture.nativeElement as HTMLElement;
         expect(compiled.textContent).toContain('Test GitHub Signal');
+    });
+
+    it('should render slack filter and signals', () => {
+        const compiled = fixture.nativeElement as HTMLElement;
+        expect(compiled.textContent).toContain('Slack');
+        expect(compiled.textContent).toContain('Test Slack Signal');
     });
 });

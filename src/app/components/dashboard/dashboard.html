@@ -17,10 +17,11 @@
 
     <div class="hero-copy">
       <h1>Decision Workspace Dashboard</h1>
-      <p>Track active workspaces and GitHub work in one place with clean structure and minimal noise.</p>
+      <p>Track active workspaces, Slack conversations, and GitHub work in one place with clean structure and minimal noise.</p>
     </div>
   </section>
 
+  <p class="integration-banner slack-banner" *ngIf="slackBanner">{{ slackBanner }}</p>
   <p class="integration-banner" *ngIf="githubBanner">{{ githubBanner }}</p>
 
   <section class="content">
@@ -54,10 +55,11 @@
     <div class="section-header">
       <div>
         <h2>Signals</h2>
-        <p class="section-copy">Assigned GitHub issues and pull requests appear here as action-ready signals.</p>
+        <p class="section-copy">Slack messages and GitHub updates appear here as action-ready signals.</p>
       </div>
       <div class="filter-row">
         <button type="button" class="filter-pill" [class.active]="filters.source === 'all'" (click)="setSourceFilter('all')">All</button>
+        <button type="button" class="filter-pill" [class.active]="filters.source === 'slack'" (click)="setSourceFilter('slack')">Slack</button>
         <button type="button" class="filter-pill" [class.active]="filters.source === 'github'" (click)="setSourceFilter('github')">GitHub</button>
         <button type="button" class="filter-pill" [class.active]="filters.status === 'all'" (click)="setStatusFilter('all')">All statuses</button>
         <button type="button" class="filter-pill" [class.active]="filters.status === 'unread'" (click)="setStatusFilter('unread')">Unread</button>
@@ -74,7 +76,7 @@
     <ng-template #noSignals>
       <div class="empty-state">
         <h3>No matching signals</h3>
-        <p>Connect GitHub and run a sync to start pulling assigned issues and pull requests into Sentinent.</p>
+        <p>Connect Slack or GitHub in workspace integrations to start pulling messages and assigned work into Sentinent.</p>
       </div>
     </ng-template>
   </section>

@@ -226,6 +226,12 @@
   font-weight: 600;
 }
 
+.integration-banner.slack-banner {
+  background: rgba(245, 232, 255, 0.9);
+  color: #6b21a8;
+  border-color: rgba(124, 58, 237, 0.22);
+}
+
 .filter-row {
   display: flex;
   flex-wrap: wrap;

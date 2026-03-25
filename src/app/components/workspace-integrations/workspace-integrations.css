@@ -74,6 +74,11 @@
   font-weight: 700;
 }
 
+.provider-badge.slack-badge {
+  background: #fce7f3;
+  color: #9d174d;
+}
+
 .card-actions,
 .section-head {
   display: flex;
@@ -98,6 +103,11 @@
   border: 1px solid #111827;
   background: #111827;
   color: #fff;
+}
+
+.slack-btn {
+  border-color: #7c3aed;
+  background: #7c3aed;
 }
 
 .secondary-btn {

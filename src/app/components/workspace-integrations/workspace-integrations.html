@@ -2,9 +2,9 @@
   <header class="integrations-header">
     <div>
       <p class="eyebrow">Workspace Integration</p>
-      <h2>GitHub Activity Feed</h2>
+      <h2>Workspace Integrations</h2>
       <p class="intro">
-        Connect GitHub to pull assigned issues and pull requests into Sentinent without leaving your workspace flow.
+        Connect Slack and GitHub so Sentinent can pull team messages and assigned development work into one dashboard.
       </p>
     </div>
     <a class="back-link" [routerLink]="['/workspaces', workspaceId, 'decisions']">Back to workspace</a>
@@ -12,9 +12,63 @@
 
   <article class="integration-card">
     <div class="card-copy">
+      <span class="provider-badge slack-badge">Slack</span>
+      <h3>Slack connection</h3>
+      <p *ngIf="isSlackConnected; else slackDisconnectedState">
+        Connected to <strong>{{ slackWorkspaceName }}</strong>
+        <span *ngIf="slackWorkspaceUrl">({{ slackWorkspaceUrl }})</span>.
+      </p>
+      <ng-template #slackDisconnectedState>
+        <p>Not connected yet. Start the OAuth flow to import Slack messages into Sentinent.</p>
+      </ng-template>
+    </div>
+
+    <div class="card-actions">
+      <button *ngIf="!isSlackConnected" type="button" class="primary-btn slack-btn" (click)="connectSlack()">Connect Slack</button>
+      <button *ngIf="isSlackConnected" type="button" class="secondary-btn" (click)="disconnectSlack()">Disconnect</button>
+    </div>
+  </article>
+
+  <p class="feedback success" *ngIf="slackFeedbackMessage">{{ slackFeedbackMessage }}</p>
+  <p class="feedback error" *ngIf="slackErrorMessage">{{ slackErrorMessage }}</p>
+
+  <section class="selection-card" *ngIf="isSlackConnected">
+    <div class="section-head">
+      <div>
+        <h3>Channel selection</h3>
+        <p>Choose which Slack channels should appear as signals in the dashboard.</p>
+      </div>
+      <button type="button" class="primary-btn slack-btn" [disabled]="isSlackSaving" (click)="saveSlackChannelSelection()">
+        {{ isSlackSaving ? 'Saving...' : 'Save Channels' }}
+      </button>
+    </div>
+
+    <div class="repo-list">
+      <label class="repo-item" *ngFor="let channel of slackChannels">
+        <input
+          type="checkbox"
+          [checked]="isSlackChannelSelected(channel.id)"
+          (change)="onSlackChannelToggle(channel.id, $event)"
+        />
+        <span>
+          <strong>#{{ channel.name }}</strong>
+          <small>{{ channel.id }}</small>
+        </span>
+      </label>
+    </div>
+  </section>
+
+  <section class="sync-card" *ngIf="isSlackConnected">
+    <h3>Slack sync status</h3>
+    <p *ngIf="slackLastSyncAt">Last channel update: {{ slackLastSyncAt | date: 'medium' }}</p>
+    <p *ngIf="!slackLastSyncAt">No Slack sync has run yet.</p>
+  </section>
+
+  <article class="integration-card">
+    <div class="card-copy">
       <span class="provider-badge">GitHub</span>
-      <h3>Connection status</h3>
-      <p *ngIf="isConnected; else disconnectedState">
+      <h3>GitHub connection</h3>
+      <p *ngIf="isGitHubConnected; else disconnectedState">
         Connected as <strong>{{ accountName }}</strong>
         <span *ngIf="accountHandle">({{ accountHandle }})</span>.
       </p>
@@ -24,25 +78,25 @@
     </div>
 
     <div class="card-actions">
-      <button *ngIf="!isConnected" type="button" class="primary-btn" (click)="connectGitHub()">Connect GitHub</button>
-      <button *ngIf="isConnected" type="button" class="secondary-btn" (click)="disconnectGitHub()">Disconnect</button>
-      <button *ngIf="isConnected" type="button" class="primary-btn" [disabled]="isSyncing" (click)="syncNow()">
+      <button *ngIf="!isGitHubConnected" type="button" class="primary-btn" (click)="connectGitHub()">Connect GitHub</button>
+      <button *ngIf="isGitHubConnected" type="button" class="secondary-btn" (click)="disconnectGitHub()">Disconnect</button>
+      <button *ngIf="isGitHubConnected" type="button" class="primary-btn" [disabled]="isSyncing" (click)="syncNow()">
         {{ isSyncing ? 'Syncing...' : 'Sync Now' }}
       </button>
     </div>
   </article>
 
-  <p class="feedback success" *ngIf="feedbackMessage">{{ feedbackMessage }}</p>
-  <p class="feedback error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="feedback success" *ngIf="githubFeedbackMessage">{{ githubFeedbackMessage }}</p>
+  <p class="feedback error" *ngIf="githubErrorMessage">{{ githubErrorMessage }}</p>
 
-  <section class="selection-card" *ngIf="isConnected">
+  <section class="selection-card" *ngIf="isGitHubConnected">
     <div class="section-head">
       <div>
         <h3>Repository selection</h3>
         <p>Choose which repositories should contribute GitHub signals to the dashboard.</p>
       </div>
-      <button type="button" class="primary-btn" [disabled]="isSaving" (click)="saveRepoSelection()">
-        {{ isSaving ? 'Saving...' : 'Save Selection' }}
+      <button type="button" class="primary-btn" [disabled]="isGitHubSaving" (click)="saveRepoSelection()">
+        {{ isGitHubSaving ? 'Saving...' : 'Save Selection' }}
       </button>
     </div>
 
@@ -61,14 +115,14 @@
     </div>
   </section>
 
-  <section class="sync-card" *ngIf="isConnected">
-    <h3>Sync status</h3>
-    <p *ngIf="lastSyncAt">Last sync: {{ lastSyncAt | date: 'medium' }}</p>
-    <p *ngIf="!lastSyncAt">No sync has run yet.</p>
-    <p *ngIf="syncStatus">
+  <section class="sync-card" *ngIf="isGitHubConnected">
+    <h3>GitHub sync status</h3>
+    <p *ngIf="githubLastSyncAt">Last sync: {{ githubLastSyncAt | date: 'medium' }}</p>
+    <p *ngIf="!githubLastSyncAt">No sync has run yet.</p>
+    <p *ngIf="githubSyncStatus">
       Current status:
-      <strong>{{ syncStatus.status }}</strong>
-      <span *ngIf="syncStatus.itemsSynced">({{ syncStatus.itemsSynced }} items)</span>
+      <strong>{{ githubSyncStatus.status }}</strong>
+      <span *ngIf="githubSyncStatus.itemsSynced">({{ githubSyncStatus.itemsSynced }} items)</span>
     </p>
   </section>
 </section>
