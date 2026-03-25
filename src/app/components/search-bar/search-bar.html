@@ -1,0 +1,69 @@
+<div class="search-container">
+  <div class="search-input-wrapper">
+    <div class="search-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </div>
+    <input 
+      #searchInput
+      type="text" 
+      [(ngModel)]="query" 
+      (ngModelChange)="onSearchChange()" 
+      (focus)="showResults = true"
+      placeholder="Search across signals and decisions..."
+      class="search-input"
+    >
+    <div class="search-loader" *ngIf="isSearching">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <div class="results-dropdown" *ngIf="showResults && (query.length >= 2 || recentSearches.length > 0)">
+    <!-- Filters -->
+    <div class="search-filters" *ngIf="query.length >= 2">
+      <button class="filter-btn" [class.active]="sourceFilter === 'all'" (mousedown)="$event.preventDefault()" (click)="onFilterChange('all')">All</button>
+      <button class="filter-btn" [class.active]="sourceFilter === 'slack'" (mousedown)="$event.preventDefault()" (click)="onFilterChange('slack')">Slack</button>
+      <button class="filter-btn" [class.active]="sourceFilter === 'github'" (mousedown)="$event.preventDefault()" (click)="onFilterChange('github')">GitHub</button>
+      <button class="filter-btn" [class.active]="sourceFilter === 'decision'" (mousedown)="$event.preventDefault()" (click)="onFilterChange('decision')">Decisions</button>
+    </div>
+
+    <!-- Results -->
+    <div class="results-list" *ngIf="query.length >= 2">
+      <div *ngIf="results.length === 0 && !isSearching" class="no-results">
+        No matches found for "{{query}}"
+      </div>
+
+      <div *ngFor="let res of results" class="result-item" (mousedown)="$event.preventDefault()" (click)="selectResult(res)">
+        <div class="result-type-icon" [ngClass]="res.source">
+          <span *ngIf="res.source === 'slack'">#</span>
+          <span *ngIf="res.source === 'github'">GH</span>
+          <span *ngIf="res.source === 'decision'">D</span>
+        </div>
+        <div class="result-content">
+          <div class="result-title" [innerHTML]="highlightMatch(res.title)"></div>
+          <div class="result-preview" [innerHTML]="highlightMatch(res.content)"></div>
+        </div>
+        <div class="result-meta">
+          {{ res.date | date:'shortDate' }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Searches -->
+    <div class="recent-searches" *ngIf="query.length < 2 && recentSearches.length > 0">
+      <div class="recent-header">
+        <span>Recent Searches</span>
+        <button (mousedown)="$event.preventDefault()" (click)="clearRecent()" class="clear-btn">Clear</button>
+      </div>
+      <div *ngFor="let s of recentSearches" class="recent-item" (mousedown)="$event.preventDefault()" (click)="useRecentSearch(s)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        <span>{{ s }}</span>
+      </div>
+    </div>
+  </div>
+</div>
