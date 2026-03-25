@@ -48,7 +48,7 @@
       <form *ngIf="isLoginVisible" (ngSubmit)="handleLogin()" class="form-section" novalidate>
         <label class="input-label" for="loginEmail">Email</label>
         <input id="loginEmail" name="loginEmail" class="input-field" type="email" autocomplete="email"
-          [(ngModel)]="loginEmail" (input)="onLoginEmailInput()" placeholder="you@email.com">
+          [class.error]="!!loginError" [(ngModel)]="loginEmail" (input)="onLoginEmailInput()" placeholder="you@email.com">
 
         <label class="input-label" for="loginPassword">Password</label>
         <input id="loginPassword" name="loginPassword" class="input-field" type="password"
@@ -73,7 +73,7 @@
       <form *ngIf="isRegisterVisible" (ngSubmit)="handleRegister()" class="form-section" novalidate>
         <label class="input-label" for="regEmail">Email</label>
         <input id="regEmail" name="regEmail" class="input-field" type="email"
-          autocomplete="email" [(ngModel)]="regEmail" (input)="onRegisterEmailInput()"
+          [class.error]="!!registerError" autocomplete="email" [(ngModel)]="regEmail" (input)="onRegisterEmailInput()"
           placeholder="you@email.com">
 
         <label class="input-label" for="regPassword">Password</label>
@@ -88,9 +88,10 @@
 
       <form *ngIf="showForgot" (ngSubmit)="handleForgot()" class="form-section">
         <label class="input-label" for="forgotEmail">Work Email</label>
-        <input id="forgotEmail" name="forgotEmail" class="input-field" type="email" required [(ngModel)]="forgotEmail"
+        <input id="forgotEmail" name="forgotEmail" class="input-field" type="email" [class.error]="!!forgotError" required [(ngModel)]="forgotEmail"
           (input)="onForgotEmailInput()" placeholder="you@company.com">
         <p class="subtle-copy">We'll send a password reset link to your email address.</p>
+        <p *ngIf="forgotError" class="error-text">{{ forgotError }}</p>
 
         <button type="submit" class="btn-primary" [disabled]="isForgotSubmitting">
           Send Reset Link
