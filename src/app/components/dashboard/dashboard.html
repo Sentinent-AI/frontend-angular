@@ -52,10 +52,10 @@
   </section>
 
   <section class="content signals-section">
-    <div class="section-header">
-      <div>
+    <div class="section-header signals-header">
+      <div class="title-group">
         <h2>Signals</h2>
-        <p class="section-copy">Slack messages and GitHub updates appear here as action-ready signals.</p>
+        <app-search-bar class="signals-search"></app-search-bar>
       </div>
       <div class="filter-row">
         <button type="button" class="filter-pill" [class.active]="filters.source === 'all'" (click)="setSourceFilter('all')">All</button>
@@ -65,6 +65,7 @@
         <button type="button" class="filter-pill" [class.active]="filters.status === 'unread'" (click)="setStatusFilter('unread')">Unread</button>
       </div>
     </div>
+    <p class="section-copy">Slack messages and GitHub updates appear here as action-ready signals.</p>
 
     <app-signal-board
       *ngIf="signals.length; else noSignals"

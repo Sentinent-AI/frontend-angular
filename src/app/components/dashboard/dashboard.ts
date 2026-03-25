@@ -7,11 +7,12 @@ import { CommonModule } from '@angular/common';
 import { Signal, SignalFilters } from '../../models/signal.model';
 import { SignalService } from '../../services/signal.service';
 import { SignalBoardComponent } from '../signal-board/signal-board';
+import { SearchBarComponent } from '../search-bar/search-bar';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, SignalBoardComponent],
+  imports: [CommonModule, RouterLink, SignalBoardComponent, SearchBarComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
