@@ -1,46 +1,73 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { SignalService } from './signal.service';
-import { Signal } from '../models/signal.model';
 
 describe('SignalService', () => {
   let service: SignalService;
+  let httpMock: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [SignalService, provideHttpClient(), provideHttpClientTesting()],
+    });
+
     service = TestBed.inject(SignalService);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
-  it('filters signals by source and status', () => {
-    let results: Signal[] = [];
+  afterEach(() => {
+    httpMock.verify();
+  });
 
-    service.getSignals({ source: 'github', status: 'unread' }).subscribe(signals => {
+  it('maps backend signals and applies request filters', () => {
+    let results: Array<{ id: string; metadata: { number?: number } }> = [];
+
+    service.getSignals({ source: 'github', status: 'unread' }).subscribe((signals) => {
       results = signals;
     });
 
-    expect(results.length).toBe(2);
-    expect(results.every(signal => signal.sourceType === 'github')).toBeTrue();
-    expect(results.every(signal => signal.status === 'unread')).toBeTrue();
+    const request = httpMock.expectOne('/api/signals?source_type=github&status=unread');
+    expect(request.request.method).toBe('GET');
+    request.flush([
+      {
+        id: 42,
+        source_type: 'github',
+        source_id: 'Sentinent-AI/frontend-angular#42',
+        external_id: '42',
+        title: 'Refine invitation flow',
+        content: 'Update the redirect behaviour',
+        author: '@neethi',
+        status: 'unread',
+        source_metadata: {
+          type: 'issue',
+          number: 42,
+          repository: 'Sentinent-AI/frontend-angular',
+        },
+        received_at: '2026-03-24T10:00:00Z',
+      },
+    ]);
+
+    expect(results.length).toBe(1);
+    expect(results[0].id).toBe('42');
+    expect(results[0].metadata.number).toBe(42);
   });
 
-  it('marks a signal as read', () => {
-    service.markAsRead('slack-101').subscribe();
+  it('marks a signal as read through the API', () => {
+    service.markAsRead('12').subscribe();
 
-    let updatedSignal: Signal | undefined;
-    service.getSignals({ source: 'slack', status: 'read' }).subscribe(signals => {
-      updatedSignal = signals.find(signal => signal.id === 'slack-101');
-    });
-
-    expect(updatedSignal?.status).toBe('read');
+    const request = httpMock.expectOne('/api/signals/12/read');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({});
+    request.flush(null, { status: 204, statusText: 'No Content' });
   });
 
-  it('archives a signal', () => {
-    service.archive('github-101').subscribe();
+  it('archives a signal through the API', () => {
+    service.archive('33').subscribe();
 
-    let activeSignals: Signal[] = [];
-    service.getSignals({ source: 'github', status: 'unread' }).subscribe(signals => {
-      activeSignals = signals;
-    });
-
-    expect(activeSignals.some(signal => signal.id === 'github-101')).toBeFalse();
+    const request = httpMock.expectOne('/api/signals/33/archive');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({});
+    request.flush(null, { status: 204, statusText: 'No Content' });
   });
 });

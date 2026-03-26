@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { SearchService } from './search.service';
 import { SignalService } from './signal.service';
 import { DecisionService } from './decision.service';
+import { WorkspaceService } from './workspace';
 import { of } from 'rxjs';
 import { Signal } from '../models/signal.model';
 import { Decision } from '../models/decision.model';
@@ -10,6 +11,7 @@ describe('SearchService', () => {
   let service: SearchService;
   let mockSignalService: any;
   let mockDecisionService: any;
+  let mockWorkspaceService: any;
 
   beforeEach(() => {
     mockSignalService = {
@@ -20,11 +22,24 @@ describe('SearchService', () => {
       getDecisions: jasmine.createSpy('getDecisions').and.returnValue(of([]))
     };
 
+    mockWorkspaceService = {
+      getWorkspaces: jasmine.createSpy('getWorkspaces').and.returnValue(of([
+        {
+          id: 'ws-1',
+          name: 'Engineering',
+          description: '',
+          createdDate: new Date('2023-01-01T00:00:00Z'),
+          ownerId: 'user-1'
+        }
+      ]))
+    };
+
     TestBed.configureTestingModule({
       providers: [
         SearchService,
         { provide: SignalService, useValue: mockSignalService },
-        { provide: DecisionService, useValue: mockDecisionService }
+        { provide: DecisionService, useValue: mockDecisionService },
+        { provide: WorkspaceService, useValue: mockWorkspaceService }
       ]
     });
 
@@ -94,6 +109,7 @@ describe('SearchService', () => {
         expect(results.length).toBe(0);
         expect(mockSignalService.getSignals).not.toHaveBeenCalled();
         expect(mockDecisionService.getDecisions).not.toHaveBeenCalled();
+        expect(mockWorkspaceService.getWorkspaces).not.toHaveBeenCalled();
         done();
       });
     });
@@ -106,6 +122,8 @@ describe('SearchService', () => {
         expect(results[0].title).toBe('Use OAuth2 for SSO');
         expect(results[1].type).toBe('signal');
         expect(results[1].title).toBe('Fix login bug');
+        expect(mockWorkspaceService.getWorkspaces).toHaveBeenCalled();
+        expect(mockDecisionService.getDecisions).toHaveBeenCalledWith('ws-1');
         done();
       });
     });
