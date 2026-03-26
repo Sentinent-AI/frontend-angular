@@ -45,6 +45,7 @@ export class AcceptInvitationComponent implements OnInit {
     this.isSubmitting = true;
     this.workspaceMemberService.acceptInvitation(this.token).subscribe({
       next: response => {
+        this.isSubmitting = false;
         this.success = `You joined the workspace as ${response.role}. Redirecting now.`;
         setTimeout(() => {
           this.router.navigate(['/workspaces', response.workspaceId, 'decisions']);

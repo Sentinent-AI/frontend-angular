@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { WorkspaceService } from '../../services/workspace';
@@ -22,6 +22,7 @@ export class Dashboard implements OnInit {
   private signalService = inject(SignalService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private cdr = inject(ChangeDetectorRef);
 
   workspaces: Workspace[] = [];
   signals: Signal[] = [];
@@ -30,8 +31,12 @@ export class Dashboard implements OnInit {
   slackBanner = '';
 
   ngOnInit() {
-    this.workspaceService.getWorkspaces().subscribe(ws => {
-      this.workspaces = ws;
+    this.workspaceService.getWorkspaces().subscribe({
+      next: ws => {
+        this.workspaces = ws;
+        this.cdr.detectChanges();
+      },
+      error: () => {}
     });
 
     this.route.queryParamMap.subscribe(params => {
