@@ -23,6 +23,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'workspaces/:id/edit',
+    loadComponent: () => import('./components/workspace/edit-workspace').then(m => m.EditWorkspaceComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'workspaces/:id/settings/members',
     component: WorkspaceMembersComponent,
     canActivate: [authGuard]
