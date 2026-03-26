@@ -1,100 +1,101 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { catchError, map, Observable, of, throwError } from 'rxjs';
 import { Decision } from '../models/decision.model';
+import { toError } from './http-error';
+
+interface DecisionResponse {
+  id: number;
+  workspace_id: number;
+  user_id: number;
+  title: string;
+  description?: string;
+  status: 'DRAFT' | 'OPEN' | 'CLOSED';
+  due_date?: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 @Injectable({
-    providedIn: 'root'
+  providedIn: 'root',
 })
 export class DecisionService {
-    private decisions: Decision[] = [];
-    private decisionsSubject = new BehaviorSubject<Decision[]>([]);
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = '/api/workspaces';
 
-    constructor() {
-        // Initialize with some mock data
-        this.decisions = [
-            {
-                id: '1',
-                title: 'Choose Frontend Framework',
-                description: 'Decide between Angular and React',
-                status: 'CLOSED',
-                workspaceId: 'ws-1',
-                userId: 'user-1',
-                dueDate: new Date('2023-11-01'),
-                createdAt: new Date('2023-10-25'),
-                updatedAt: new Date('2023-10-26'),
-                isDeleted: false
-            },
-            {
-                id: '2',
-                title: 'Database Selection',
-                description: 'Evaluate SQLite vs PostgreSQL for local dev',
-                status: 'OPEN',
-                workspaceId: 'ws-1',
-                userId: 'user-1',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false
-            }
-        ];
-        this.decisionsSubject.next(this.decisions);
-    }
+  getDecisions(workspaceId: string): Observable<Decision[]> {
+    return this.http.get<DecisionResponse[]>(`${this.apiUrl}/${workspaceId}/decisions`).pipe(
+      map((decisions) => decisions.map((decision) => this.mapDecision(decision))),
+      catchError((error) => throwError(() => toError(error, 'Unable to load decisions.'))),
+    );
+  }
 
-    getDecisions(workspaceId: string): Observable<Decision[]> {
-        return this.decisionsSubject.asObservable().pipe(
-            map(decisions => decisions.filter(d => d.workspaceId === workspaceId && !d.isDeleted))
-        );
-    }
-
-    getDecision(id: string): Observable<Decision | undefined> {
-        return this.decisionsSubject.asObservable().pipe(
-            map(decisions => decisions.find(d => d.id === id))
-        );
-    }
-
-    createDecision(decision: Partial<Decision>): Observable<Decision> {
-        if (!decision.workspaceId) {
-            throw new Error('workspaceId is required to create a decision');
+  getDecision(workspaceId: string, id: string): Observable<Decision | undefined> {
+    return this.http.get<DecisionResponse>(`${this.apiUrl}/${workspaceId}/decisions/${id}`).pipe(
+      map((decision) => this.mapDecision(decision)),
+      catchError((error) => {
+        if (error.status === 404) {
+          return of(undefined);
         }
+        return throwError(() => toError(error, 'Unable to load decision.'));
+      }),
+    );
+  }
 
-        const newDecision: Decision = {
-            id: Math.random().toString(36).substring(2, 9),
-            title: decision.title!,
-            description: decision.description,
-            status: decision.status || 'DRAFT',
-            workspaceId: decision.workspaceId,
-            userId: 'user-1', // Mock user
-            dueDate: decision.dueDate,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            isDeleted: false
-        };
-
-        this.decisions.push(newDecision);
-        this.decisionsSubject.next(this.decisions);
-        return of(newDecision);
+  createDecision(decision: Partial<Decision>): Observable<Decision> {
+    if (!decision.workspaceId) {
+      throw new Error('workspaceId is required to create a decision');
     }
 
-    updateDecision(id: string, updates: Partial<Decision>): Observable<Decision | undefined> {
-        const index = this.decisions.findIndex(d => d.id === id);
-        if (index !== -1) {
-            this.decisions[index] = {
-                ...this.decisions[index],
-                ...updates,
-                updatedAt: new Date()
-            };
-            this.decisionsSubject.next(this.decisions);
-            return of(this.decisions[index]);
-        }
-        return of(undefined);
-    }
+    return this.http
+      .post<DecisionResponse>(`${this.apiUrl}/${decision.workspaceId}/decisions`, this.toPayload(decision))
+      .pipe(
+        map((created) => this.mapDecision(created)),
+        catchError((error) => throwError(() => toError(error, 'Unable to create decision.'))),
+      );
+  }
 
-    deleteDecision(id: string): Observable<void> {
-        const index = this.decisions.findIndex(d => d.id === id);
-        if (index !== -1) {
-            this.decisions[index].isDeleted = true;
-            this.decisionsSubject.next(this.decisions);
-        }
-        return of(void 0);
-    }
+  updateDecision(workspaceId: string, id: string, updates: Partial<Decision>): Observable<Decision | undefined> {
+    return this.http
+      .patch<DecisionResponse>(`${this.apiUrl}/${workspaceId}/decisions/${id}`, this.toPayload(updates))
+      .pipe(
+        map((decision) => this.mapDecision(decision)),
+        catchError((error) => {
+          if (error.status === 404) {
+            return of(undefined);
+          }
+          return throwError(() => toError(error, 'Unable to update decision.'));
+        }),
+      );
+  }
+
+  deleteDecision(workspaceId: string, id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${workspaceId}/decisions/${id}`).pipe(
+      catchError((error) => throwError(() => toError(error, 'Unable to delete decision.'))),
+    );
+  }
+
+  private toPayload(decision: Partial<Decision>) {
+    return {
+      title: decision.title,
+      description: decision.description ?? '',
+      status: decision.status ?? 'DRAFT',
+      due_date: decision.dueDate ? new Date(decision.dueDate).toISOString() : null,
+    };
+  }
+
+  private mapDecision(decision: DecisionResponse): Decision {
+    return {
+      id: String(decision.id),
+      workspaceId: String(decision.workspace_id),
+      userId: String(decision.user_id),
+      title: decision.title,
+      description: decision.description ?? '',
+      status: decision.status,
+      dueDate: decision.due_date ? new Date(decision.due_date) : undefined,
+      createdAt: new Date(decision.created_at),
+      updatedAt: new Date(decision.updated_at),
+      isDeleted: false,
+    };
+  }
 }

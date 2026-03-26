@@ -1,96 +1,138 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { IntegrationService } from './integration.service';
 
 describe('IntegrationService', () => {
   let service: IntegrationService;
+  let httpMock: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [IntegrationService, provideHttpClient(), provideHttpClientTesting()],
+    });
+
     service = TestBed.inject(IntegrationService);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
-  it('connects Slack and exposes workspace details', () => {
-    let connected = false;
-    let workspaceName: string | undefined;
-
-    service.connectSlack().subscribe(result => {
-      connected = result.connected;
-    });
-    service.getSlackChannels().subscribe(result => {
-      workspaceName = result.workspaceName;
-    });
-
-    expect(connected).toBeTrue();
-    expect(workspaceName).toBe('Sentinent Ops');
+  afterEach(() => {
+    httpMock.verify();
   });
 
-  it('updates Slack channel selections', () => {
-    let connectedChannels: string[] = [];
+  it('requests the Slack OAuth URL with the workspace id', () => {
+    let authUrl = '';
 
-    service.updateSlackChannels(['C987654']).subscribe();
-    service.getSlackChannels().subscribe(result => {
-      connectedChannels = result.channels.filter(channel => channel.isConnected).map(channel => channel.id);
+    service.getSlackAuthUrl('7').subscribe((result) => {
+      authUrl = result.authUrl;
     });
 
-    expect(connectedChannels).toEqual(['C987654']);
+    const request = httpMock.expectOne('/api/integrations/slack/auth?workspace_id=7');
+    expect(request.request.method).toBe('GET');
+    request.flush({ auth_url: 'https://slack.com/oauth/mock' });
+
+    expect(authUrl).toBe('https://slack.com/oauth/mock');
   });
 
-  it('disconnects Slack and clears all connected channels', () => {
-    let connected = true;
-    let connectedChannels = 1;
+  it('maps Slack channels using selected ids from integration metadata', () => {
+    let result: any;
 
-    service.connectSlack().subscribe();
-    service.disconnectSlack().subscribe();
-    service.getSlackChannels().subscribe(result => {
-      connected = result.connected;
-      connectedChannels = result.channels.filter(channel => channel.isConnected).length;
+    service.getSlackChannels('9').subscribe((state) => {
+      result = state;
     });
 
-    expect(connected).toBeFalse();
-    expect(connectedChannels).toBe(0);
-  });
+    const integrationsRequest = httpMock.expectOne('/api/integrations?workspace_id=9');
+    expect(integrationsRequest.request.method).toBe('GET');
+    integrationsRequest.flush([
+      {
+        id: 4,
+        provider: 'slack',
+        workspace_id: 9,
+        metadata: JSON.stringify({
+          team_name: 'Sentinent Ops',
+          selected_channels: ['C123'],
+        }),
+        updated_at: '2026-03-24T10:00:00Z',
+      },
+    ]);
 
-  it('returns an error when GitHub sync is requested before connection', () => {
-    let errorMessage = '';
-
-    service.syncGitHub().subscribe({
-      next: () => fail('expected syncGitHub to fail when GitHub is disconnected'),
-      error: error => {
-        errorMessage = error.message;
-      }
+    const channelsRequest = httpMock.expectOne('/api/integrations/slack/channels?integration_id=4');
+    expect(channelsRequest.request.method).toBe('GET');
+    channelsRequest.flush({
+      channels: [
+        { id: 'C123', name: 'general' },
+        { id: 'C456', name: 'engineering' },
+      ],
     });
 
-    expect(errorMessage).toContain('Connect GitHub');
+    expect(result.connected).toBeTrue();
+    expect(result.workspaceName).toBe('Sentinent Ops');
+    expect(result.channels[0].isConnected).toBeTrue();
+    expect(result.channels[1].isConnected).toBeFalse();
   });
 
-  it('syncs connected GitHub repositories and exposes the sync status', () => {
-    let syncId = '';
-    let itemsSynced = 0;
+  it('maps GitHub repositories using selected repo ids from integration metadata', () => {
+    let repos: Array<{ isConnected: boolean }> = [];
 
-    service.connectGitHub().subscribe();
+    service.getGitHubRepos().subscribe((state) => {
+      repos = state.repos;
+    });
+
+    const integrationsRequest = httpMock.expectOne('/api/integrations');
+    expect(integrationsRequest.request.method).toBe('GET');
+    integrationsRequest.flush([
+      {
+        id: 8,
+        provider: 'github',
+        metadata: JSON.stringify({
+          selected_repo_ids: [101],
+        }),
+        updated_at: '2026-03-24T10:00:00Z',
+      },
+    ]);
+
+    const reposRequest = httpMock.expectOne('/api/integrations/github/repos');
+    expect(reposRequest.request.method).toBe('GET');
+    reposRequest.flush([
+      {
+        id: 101,
+        name: 'frontend-angular',
+        full_name: 'Sentinent-AI/frontend-angular',
+        owner: { login: 'Sentinent-AI' },
+      },
+      {
+        id: 102,
+        name: 'backend-go',
+        full_name: 'Sentinent-AI/backend-go',
+        owner: { login: 'Sentinent-AI' },
+      },
+    ]);
+
+    expect(repos.length).toBe(2);
+    expect(repos[0].isConnected).toBeTrue();
+    expect(repos[1].isConnected).toBeFalse();
+  });
+
+  it('persists GitHub repository selections through the backend API', () => {
     service.updateGitHubRepos([101, 103]).subscribe();
-    service.syncGitHub().subscribe(result => {
-      syncId = result.syncId;
-    });
-    service.getSyncStatus(syncId).subscribe(result => {
-      itemsSynced = result.itemsSynced ?? 0;
-    });
 
-    expect(syncId).toContain('sync-');
-    expect(itemsSynced).toBe(12);
+    const request = httpMock.expectOne('/api/integrations/github/repos');
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({ repo_ids: [101, 103] });
+    request.flush(null, { status: 204, statusText: 'No Content' });
   });
 
-  it('disconnects GitHub and clears the latest sync state', () => {
-    let status = 'unknown';
+  it('maps GitHub sync start responses into UI sync state', () => {
+    let status = '';
 
-    service.connectGitHub().subscribe();
-    service.syncGitHub().subscribe(result => {
-      service.disconnectGitHub().subscribe();
-      service.getSyncStatus(result.syncId).subscribe(syncStatus => {
-        status = syncStatus.status;
-      });
+    service.syncGitHub().subscribe((result) => {
+      status = result.status;
     });
 
-    expect(status).toBe('failed');
+    const request = httpMock.expectOne('/api/integrations/github/sync');
+    expect(request.request.method).toBe('POST');
+    request.flush({ status: 'sync_started' });
+
+    expect(status).toBe('in_progress');
   });
 });

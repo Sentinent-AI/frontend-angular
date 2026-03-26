@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
-import { Observable, combineLatest, map, of } from 'rxjs';
+import { Observable, combineLatest, forkJoin, map, of, switchMap } from 'rxjs';
 import { SignalService } from './signal.service';
 import { DecisionService } from './decision.service';
 import { Signal } from '../models/signal.model';
 import { Decision } from '../models/decision.model';
+import { WorkspaceService } from './workspace';
 
 export type SearchResultType = 'signal' | 'decision';
 
@@ -27,7 +28,8 @@ export class SearchService {
 
   constructor(
     private signalService: SignalService,
-    private decisionService: DecisionService
+    private decisionService: DecisionService,
+    private workspaceService: WorkspaceService
   ) {}
 
   search(query: string, sourceFilter: string = 'all'): Observable<SearchResult[]> {
@@ -45,7 +47,16 @@ export class SearchService {
     );
 
     // Decision filtering
-    const decisions$ = this.decisionService.getDecisions('ws-1').pipe(
+    const decisions$ = this.workspaceService.getWorkspaces().pipe(
+      switchMap(workspaces => {
+        if (workspaces.length === 0) {
+          return of([] as Decision[]);
+        }
+
+        return forkJoin(workspaces.map(workspace => this.decisionService.getDecisions(workspace.id))).pipe(
+          map(decisionGroups => decisionGroups.flat())
+        );
+      }),
       map(decisions => decisions.filter(d => {
         const matchesQuery = (d.title + ' ' + (d.description || '')).toLowerCase().includes(q);
         const matchesSource = sourceFilter === 'all' || sourceFilter === 'decision';
