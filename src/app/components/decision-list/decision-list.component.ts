@@ -14,6 +14,7 @@ import { Observable } from 'rxjs';
 })
 export class DecisionListComponent implements OnInit {
     decisions$: Observable<Decision[]> | undefined;
+    private workspaceId: string | null = null;
 
     constructor(
         private decisionService: DecisionService,
@@ -21,15 +22,17 @@ export class DecisionListComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
-        const workspaceId = this.getWorkspaceIdFromRoute();
-        if (workspaceId) {
-            this.decisions$ = this.decisionService.getDecisions(workspaceId);
+        this.workspaceId = this.getWorkspaceIdFromRoute();
+        if (this.workspaceId) {
+            this.decisions$ = this.decisionService.getDecisions(this.workspaceId);
         }
     }
 
     deleteDecision(id: string): void {
-        if (confirm('Are you sure you want to delete this decision?')) {
-            this.decisionService.deleteDecision(id);
+        if (confirm('Are you sure you want to delete this decision?') && this.workspaceId) {
+            this.decisionService.deleteDecision(this.workspaceId, id).subscribe(() => {
+                this.decisions$ = this.decisionService.getDecisions(this.workspaceId!);
+            });
         }
     }
 

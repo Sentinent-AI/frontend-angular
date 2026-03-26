@@ -48,16 +48,16 @@ export class WorkspaceIntegrationsComponent implements OnInit {
   connectSlack(): void {
     this.slackErrorMessage = '';
     this.slackFeedbackMessage = 'Starting Slack connection...';
-    this.integrationService.getSlackAuthUrl().subscribe(() => {
-      this.integrationService.connectSlack().subscribe(() => {
-        this.slackFeedbackMessage = 'Slack workspace connected. Choose the channels you want to monitor.';
-        this.loadSlackChannels();
-      });
+    this.integrationService.connectSlack(this.workspaceId).subscribe({
+      error: (error: Error) => {
+        this.slackErrorMessage = error.message;
+        this.slackFeedbackMessage = '';
+      }
     });
   }
 
   disconnectSlack(): void {
-    this.integrationService.disconnectSlack().subscribe(() => {
+    this.integrationService.disconnectSlack(this.workspaceId).subscribe(() => {
       this.slackFeedbackMessage = 'Slack integration disconnected.';
       this.loadSlackChannels();
     });
@@ -66,11 +66,11 @@ export class WorkspaceIntegrationsComponent implements OnInit {
   connectGitHub(): void {
     this.githubErrorMessage = '';
     this.githubFeedbackMessage = 'Starting GitHub connection...';
-    this.integrationService.getGitHubAuthUrl().subscribe(() => {
-      this.integrationService.connectGitHub().subscribe(() => {
-        this.githubFeedbackMessage = 'GitHub account connected. Select the repositories you want Sentinent to monitor.';
-        this.loadRepos();
-      });
+    this.integrationService.connectGitHub().subscribe({
+      error: (error: Error) => {
+        this.githubErrorMessage = error.message;
+        this.githubFeedbackMessage = '';
+      }
     });
   }
 
@@ -107,7 +107,7 @@ export class WorkspaceIntegrationsComponent implements OnInit {
   saveSlackChannelSelection(): void {
     this.isSlackSaving = true;
     this.slackErrorMessage = '';
-    this.integrationService.updateSlackChannels(this.selectedSlackChannelIds).subscribe({
+    this.integrationService.updateSlackChannels(this.workspaceId, this.selectedSlackChannelIds).subscribe({
       next: () => {
         this.isSlackSaving = false;
         this.slackFeedbackMessage = 'Slack channel selection saved.';
@@ -140,15 +140,13 @@ export class WorkspaceIntegrationsComponent implements OnInit {
     this.isSyncing = true;
     this.githubErrorMessage = '';
     this.integrationService.syncGitHub().subscribe({
-      next: ({ syncId }) => {
-        this.integrationService.getSyncStatus(syncId).subscribe(status => {
-          this.githubSyncStatus = status;
-          this.isSyncing = false;
-          this.githubLastSyncAt = status.completedAt;
-          this.githubFeedbackMessage = status.status === 'completed'
-            ? `Sync completed. ${status.itemsSynced ?? 0} items refreshed.`
-            : 'GitHub sync failed.';
-        });
+      next: (status) => {
+        this.githubSyncStatus = status;
+        this.isSyncing = false;
+        this.githubFeedbackMessage = status.status === 'in_progress'
+          ? 'GitHub sync started. Signals will refresh shortly.'
+          : 'GitHub sync could not be started.';
+        this.loadRepos();
       },
       error: (error: Error) => {
         this.isSyncing = false;
@@ -166,7 +164,7 @@ export class WorkspaceIntegrationsComponent implements OnInit {
   }
 
   private loadSlackChannels(): void {
-    this.integrationService.getSlackChannels().subscribe(response => {
+    this.integrationService.getSlackChannels(this.workspaceId).subscribe(response => {
       this.isSlackConnected = response.connected;
       this.slackChannels = response.channels;
       this.selectedSlackChannelIds = response.channels.filter(channel => channel.isConnected).map(channel => channel.id);

@@ -1,139 +1,94 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { Signal, SignalFilters } from '../models/signal.model';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { catchError, map, Observable, throwError } from 'rxjs';
+import { Signal, SignalFilters, SignalMetadata } from '../models/signal.model';
+import { toError } from './http-error';
+
+interface SignalResponse {
+  id: number;
+  workspace_id?: number;
+  source_type: 'slack' | 'github';
+  source_id: string;
+  external_id?: string;
+  title: string;
+  content?: string;
+  author?: string;
+  url?: string;
+  status: 'unread' | 'read' | 'archived';
+  source_metadata?: {
+    type?: 'issue' | 'pull_request';
+    number?: number;
+    repository?: string;
+    state?: 'open' | 'closed';
+    labels?: string[];
+  };
+  received_at?: string;
+}
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SignalService {
-  private signals: Signal[] = [
-    {
-      id: 'slack-101',
-      sourceType: 'slack',
-      sourceId: 'C123456',
-      externalId: '1735200123.0001',
-      title: 'Message from #general',
-      content: 'Heads up: the deployment window starts at 5 PM Eastern. Please confirm your checklist items.',
-      author: '@sam.ops',
-      status: 'unread',
-      receivedAt: new Date('2026-03-24T09:10:00Z'),
-      url: 'https://sentinent.slack.com/archives/C123456/p17352001230001',
-      metadata: {
-        channel: 'general',
-        channelId: 'C123456',
-        timestamp: '1735200123.0001',
-        user: 'U123456'
-      }
-    },
-    {
-      id: 'slack-102',
-      sourceType: 'slack',
-      sourceId: 'C456789',
-      externalId: '1735201123.0002',
-      title: 'Message from #engineering',
-      content: 'Can someone review the API rate-limit handling before we push the Slack integration branch?',
-      author: '@jordan.dev',
-      status: 'read',
-      receivedAt: new Date('2026-03-24T10:05:00Z'),
-      url: 'https://sentinent.slack.com/archives/C456789/p17352011230002',
-      metadata: {
-        channel: 'engineering',
-        channelId: 'C456789',
-        timestamp: '1735201123.0002',
-        user: 'U456789'
-      }
-    },
-    {
-      id: 'github-101',
-      sourceType: 'github',
-      sourceId: 'Sentinent-AI/frontend-angular',
-      externalId: '42',
-      title: 'Refine invitation acceptance flow',
-      content: 'The accept invitation screen should redirect users back to the intended workspace after login.',
-      author: '@neethi',
-      status: 'unread',
-      receivedAt: new Date('2026-03-23T09:00:00Z'),
-      url: 'https://github.com/Sentinent-AI/frontend-angular/issues/42',
-      metadata: {
-        type: 'issue',
-        number: 42,
-        repository: 'Sentinent-AI/frontend-angular',
-        state: 'open',
-        labels: ['frontend', 'ux'],
-        assignees: ['@neethi'],
-        createdAt: new Date('2026-03-22T20:00:00Z'),
-        updatedAt: new Date('2026-03-23T09:00:00Z')
-      }
-    },
-    {
-      id: 'github-102',
-      sourceType: 'github',
-      sourceId: 'Sentinent-AI/Sentinent',
-      externalId: '14',
-      title: 'Story: GitHub Integration (US-6)',
-      content: 'Build OAuth connection, repository selection, and GitHub signal filtering in the dashboard.',
-      author: '@yashrastogi',
-      status: 'read',
-      receivedAt: new Date('2026-03-23T11:15:00Z'),
-      url: 'https://github.com/Sentinent-AI/Sentinent/issues/14',
-      metadata: {
-        type: 'issue',
-        number: 14,
-        repository: 'Sentinent-AI/Sentinent',
-        state: 'open',
-        labels: ['user-story'],
-        assignees: ['@me'],
-        createdAt: new Date('2026-03-23T01:20:00Z'),
-        updatedAt: new Date('2026-03-23T11:15:00Z')
-      }
-    },
-    {
-      id: 'github-103',
-      sourceType: 'github',
-      sourceId: 'Sentinent-AI/backend-go',
-      externalId: '31',
-      title: 'Add GitHub sync status endpoint',
-      content: 'Expose last run progress so the frontend can show whether a manual sync completed successfully.',
-      author: '@backend-bot',
-      status: 'unread',
-      receivedAt: new Date('2026-03-23T12:05:00Z'),
-      url: 'https://github.com/Sentinent-AI/backend-go/pull/31',
-      metadata: {
-        type: 'pull_request',
-        number: 31,
-        repository: 'Sentinent-AI/backend-go',
-        state: 'open',
-        labels: ['backend', 'integrations'],
-        assignees: ['@neethi', '@backend-bot'],
-        createdAt: new Date('2026-03-23T10:00:00Z'),
-        updatedAt: new Date('2026-03-23T12:05:00Z')
-      }
-    }
-  ];
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = '/api/signals';
 
   getSignals(filters: SignalFilters): Observable<Signal[]> {
-    return of(
-      this.signals.filter(signal => {
-        const sourceMatch = filters.source === 'all' || signal.sourceType === filters.source;
-        const statusMatch = filters.status === 'all' || signal.status === filters.status;
-        return sourceMatch && statusMatch;
-      })
+    let params = new HttpParams();
+
+    if (filters.source !== 'all') {
+      params = params.set('source_type', filters.source);
+    }
+
+    if (filters.status !== 'all') {
+      params = params.set('status', filters.status);
+    }
+
+    return this.http.get<SignalResponse[]>(this.apiUrl, { params }).pipe(
+      map((signals) => signals.map((signal) => this.mapSignal(signal))),
+      catchError((error) => throwError(() => toError(error, 'Unable to load signals.'))),
     );
   }
 
   markAsRead(signalId: string): Observable<void> {
-    this.signals = this.signals.map(signal =>
-      signal.id === signalId ? { ...signal, status: 'read' } : signal
+    return this.http.post<void>(`${this.apiUrl}/${signalId}/read`, {}).pipe(
+      catchError((error) => throwError(() => toError(error, 'Unable to mark signal as read.'))),
     );
-
-    return of(void 0);
   }
 
   archive(signalId: string): Observable<void> {
-    this.signals = this.signals.map(signal =>
-      signal.id === signalId ? { ...signal, status: 'archived' } : signal
+    return this.http.post<void>(`${this.apiUrl}/${signalId}/archive`, {}).pipe(
+      catchError((error) => throwError(() => toError(error, 'Unable to archive signal.'))),
     );
+  }
 
-    return of(void 0);
+  private mapSignal(signal: SignalResponse): Signal {
+    return {
+      id: String(signal.id),
+      sourceType: signal.source_type,
+      sourceId: signal.source_id,
+      externalId: signal.external_id ?? '',
+      title: signal.title,
+      content: signal.content ?? '',
+      author: signal.author ?? '',
+      status: signal.status,
+      receivedAt: signal.received_at ? new Date(signal.received_at) : new Date(),
+      url: signal.url,
+      metadata: this.mapMetadata(signal),
+    };
+  }
+
+  private mapMetadata(signal: SignalResponse): SignalMetadata {
+    if (signal.source_type === 'slack') {
+      const [channelId, timestamp] = signal.source_id.split(':');
+      return {
+        channel: channelId,
+        channelId,
+        timestamp: signal.external_id ?? timestamp,
+      };
+    }
+
+    return {
+      ...(signal.source_metadata ?? {}),
+    };
   }
 }
