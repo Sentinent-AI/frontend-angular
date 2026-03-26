@@ -52,27 +52,6 @@ export class Dashboard implements OnInit {
     this.loadSignals();
   }
 
-  editWorkspace(workspace: Workspace) {
-    const updatedName = window.prompt('Edit workspace name', workspace.name)?.trim();
-    if (!updatedName) {
-      return;
-    }
-
-    const updatedDescriptionInput = window.prompt('Edit workspace description', workspace.description ?? '');
-    if (updatedDescriptionInput === null) {
-      return;
-    }
-
-    const updatedDescription = updatedDescriptionInput.trim();
-
-    this.workspaceService.updateWorkspace(workspace.id, updatedName, updatedDescription).subscribe(updatedWorkspace => {
-      if (!updatedWorkspace) {
-        return;
-      }
-      this.workspaces = this.workspaces.map(ws => ws.id === updatedWorkspace.id ? updatedWorkspace : ws);
-    });
-  }
-
   deleteWorkspace(workspace: Workspace) {
     const confirmed = window.confirm(`Delete workspace "${workspace.name}"?`);
     if (!confirmed) {

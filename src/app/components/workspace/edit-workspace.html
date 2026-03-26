@@ -15,11 +15,16 @@
   <main class="form-wrapper">
     <div class="form-card">
       <div class="form-header">
-        <h2>Create Workspace</h2>
-        <p>Set up a workspace to organize your decisions and signals.</p>
+        <h2>Edit Workspace</h2>
+        <p>Update the details of your workspace below.</p>
       </div>
 
-      <form (ngSubmit)="onSubmit()" #workspaceForm="ngForm" novalidate>
+      <div *ngIf="isLoading" class="loading-state">
+        <div class="spinner"></div>
+        <span>Loading workspace...</span>
+      </div>
+
+      <form *ngIf="!isLoading && !error" (ngSubmit)="onSubmit()" #workspaceForm="ngForm" novalidate>
         <div class="form-group">
           <label for="workspace-name">Workspace Name</label>
           <input
@@ -49,7 +54,7 @@
 
         <div class="form-actions">
           <button type="submit" [disabled]="isSubmitting || !workspaceForm.form.valid" class="premium-btn">
-            {{ isSubmitting ? 'Creating...' : 'Create Workspace' }}
+            {{ isSubmitting ? 'Updating...' : 'Save Changes' }}
           </button>
         </div>
       </form>
