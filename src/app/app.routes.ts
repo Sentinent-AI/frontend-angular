@@ -9,6 +9,10 @@ export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'signup', component: Login },
   {
+    path: 'reset-password/:token',
+    loadComponent: () => import('./components/reset-password/reset-password').then(m => m.ResetPasswordComponent)
+  },
+  {
     path: 'invitations/:token',
     loadComponent: () => import('./components/accept-invitation/accept-invitation').then(m => m.AcceptInvitationComponent)
   },
