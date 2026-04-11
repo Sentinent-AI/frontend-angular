@@ -4,7 +4,7 @@
       <p class="eyebrow">Workspace Integration</p>
       <h2>Workspace Integrations</h2>
       <p class="intro">
-        Connect Slack and GitHub so Sentinent can pull team messages and assigned development work into one dashboard.
+        Connect Slack, Gmail, and GitHub so Sentinent can pull messages and assigned work into one dashboard.
       </p>
     </div>
     <a class="back-link" [routerLink]="['/workspaces', workspaceId, 'decisions']">Back to workspace</a>
@@ -62,6 +62,34 @@
     <h3>Slack sync status</h3>
     <p *ngIf="slackLastSyncAt">Last channel update: {{ slackLastSyncAt | date: 'medium' }}</p>
     <p *ngIf="!slackLastSyncAt">No Slack sync has run yet.</p>
+  </section>
+
+  <article class="integration-card">
+    <div class="card-copy">
+      <span class="provider-badge">Gmail</span>
+      <h3>Gmail connection</h3>
+      <p *ngIf="isGmailConnected; else gmailDisconnectedState">
+        Connected as <strong>{{ gmailEmail }}</strong>
+        <span *ngIf="gmailName">({{ gmailName }})</span>.
+      </p>
+      <ng-template #gmailDisconnectedState>
+        <p>Not connected yet. Start the OAuth flow to let Sentinent securely read your Gmail inbox metadata.</p>
+      </ng-template>
+    </div>
+
+    <div class="card-actions">
+      <button *ngIf="!isGmailConnected" type="button" class="primary-btn" (click)="connectGmail()">Connect Gmail</button>
+      <button *ngIf="isGmailConnected" type="button" class="secondary-btn" (click)="disconnectGmail()">Disconnect</button>
+    </div>
+  </article>
+
+  <p class="feedback success" *ngIf="gmailFeedbackMessage">{{ gmailFeedbackMessage }}</p>
+  <p class="feedback error" *ngIf="gmailErrorMessage">{{ gmailErrorMessage }}</p>
+
+  <section class="sync-card" *ngIf="isGmailConnected">
+    <h3>Gmail connection status</h3>
+    <p *ngIf="gmailLastConnectedAt">Last connected: {{ gmailLastConnectedAt | date: 'medium' }}</p>
+    <p *ngIf="!gmailLastConnectedAt">Connection is active.</p>
   </section>
 
   <article class="integration-card">

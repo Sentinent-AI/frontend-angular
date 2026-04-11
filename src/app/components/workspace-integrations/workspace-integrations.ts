@@ -3,6 +3,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { IntegrationService } from '../../services/integration.service';
 import { GitHubRepo, SyncStatus } from '../../models/github-integration.model';
+import { GmailConnectionState } from '../../models/gmail-integration.model';
 import { SlackChannel } from '../../models/slack-integration.model';
 
 @Component({
@@ -39,10 +40,23 @@ export class WorkspaceIntegrationsComponent implements OnInit {
   isGitHubSaving = false;
   isSyncing = false;
 
+  isGmailConnected = false;
+  gmailEmail = '';
+  gmailName = '';
+  gmailLastConnectedAt?: Date;
+  gmailFeedbackMessage = '';
+  gmailErrorMessage = '';
+
   ngOnInit(): void {
     this.workspaceId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.route.queryParamMap.subscribe(params => {
+      const gmailStatus = params.get('gmail');
+      this.gmailFeedbackMessage = gmailStatus === 'connected' ? 'Gmail connected successfully.' : '';
+      this.gmailErrorMessage = gmailStatus === 'failed' ? 'Gmail connection failed. Please try again.' : '';
+    });
     this.loadSlackChannels();
     this.loadRepos();
+    this.loadGmailConnection();
   }
 
   connectSlack(): void {
@@ -79,6 +93,25 @@ export class WorkspaceIntegrationsComponent implements OnInit {
       this.githubSyncStatus = undefined;
       this.githubFeedbackMessage = 'GitHub integration disconnected.';
       this.loadRepos();
+    });
+  }
+
+  connectGmail(): void {
+    this.gmailErrorMessage = '';
+    this.gmailFeedbackMessage = 'Starting Gmail connection...';
+    this.integrationService.connectGmail(this.workspaceId).subscribe({
+      error: (error: Error) => {
+        this.gmailErrorMessage = error.message;
+        this.gmailFeedbackMessage = '';
+      }
+    });
+  }
+
+  disconnectGmail(): void {
+    this.integrationService.disconnectGmail().subscribe(() => {
+      this.gmailFeedbackMessage = 'Gmail integration disconnected.';
+      this.gmailErrorMessage = '';
+      this.loadGmailConnection();
     });
   }
 
@@ -182,6 +215,15 @@ export class WorkspaceIntegrationsComponent implements OnInit {
       this.accountName = response.accountName ?? '';
       this.accountHandle = response.accountHandle ?? '';
       this.githubLastSyncAt = response.lastSyncAt;
+    });
+  }
+
+  private loadGmailConnection(): void {
+    this.integrationService.getGmailConnection().subscribe((response: GmailConnectionState) => {
+      this.isGmailConnected = response.connected;
+      this.gmailEmail = response.email ?? '';
+      this.gmailName = response.name ?? '';
+      this.gmailLastConnectedAt = response.lastConnectedAt;
     });
   }
 }

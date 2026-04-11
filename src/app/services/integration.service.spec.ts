@@ -34,6 +34,20 @@ describe('IntegrationService', () => {
     expect(authUrl).toBe('https://slack.com/oauth/mock');
   });
 
+  it('requests the Gmail OAuth URL with the return location', () => {
+    let authUrl = '';
+
+    service.getGmailAuthUrl('http://localhost:4200/workspaces/7/settings/integrations').subscribe((result) => {
+      authUrl = result.authUrl;
+    });
+
+    const request = httpMock.expectOne('/api/integrations/gmail/auth?redirect_url=http://localhost:4200/workspaces/7/settings/integrations');
+    expect(request.request.method).toBe('GET');
+    request.flush({ auth_url: 'https://accounts.google.com/o/oauth2/auth' });
+
+    expect(authUrl).toBe('https://accounts.google.com/o/oauth2/auth');
+  });
+
   it('maps Slack channels using selected ids from integration metadata', () => {
     let result: any;
 
@@ -113,6 +127,32 @@ describe('IntegrationService', () => {
     expect(repos[1].isConnected).toBeFalse();
   });
 
+  it('maps Gmail connection metadata from integrations', () => {
+    let connection: any;
+
+    service.getGmailConnection().subscribe((state) => {
+      connection = state;
+    });
+
+    const integrationsRequest = httpMock.expectOne('/api/integrations');
+    expect(integrationsRequest.request.method).toBe('GET');
+    integrationsRequest.flush([
+      {
+        id: 12,
+        provider: 'gmail',
+        metadata: JSON.stringify({
+          email: 'alerts@example.com',
+          name: 'Team Inbox',
+        }),
+        updated_at: '2026-03-24T10:00:00Z',
+      },
+    ]);
+
+    expect(connection.connected).toBeTrue();
+    expect(connection.email).toBe('alerts@example.com');
+    expect(connection.name).toBe('Team Inbox');
+  });
+
   it('persists GitHub repository selections through the backend API', () => {
     service.updateGitHubRepos([101, 103]).subscribe();
 
@@ -134,5 +174,13 @@ describe('IntegrationService', () => {
     request.flush({ status: 'sync_started' });
 
     expect(status).toBe('in_progress');
+  });
+
+  it('disconnects Gmail through the backend API', () => {
+    service.disconnectGmail().subscribe();
+
+    const request = httpMock.expectOne('/api/integrations/gmail');
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null, { status: 200, statusText: 'OK' });
   });
 });

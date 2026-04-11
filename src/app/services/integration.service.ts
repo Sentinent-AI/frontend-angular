@@ -2,12 +2,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { GitHubConnectionState, GitHubRepo, SyncStatus } from '../models/github-integration.model';
+import { GmailConnectionState } from '../models/gmail-integration.model';
 import { SlackConnectionState } from '../models/slack-integration.model';
 import { toError } from './http-error';
 
 interface IntegrationRecord {
   id: number;
-  provider: 'slack' | 'github';
+  provider: 'slack' | 'github' | 'gmail';
   workspace_id?: number;
   metadata?: string;
   updated_at: string;
@@ -166,6 +167,51 @@ export class IntegrationService {
   disconnectGitHub(): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/github`).pipe(
       catchError((error) => throwError(() => toError(error, 'Unable to disconnect GitHub.'))),
+    );
+  }
+
+  getGmailAuthUrl(redirectUrl: string): Observable<{ authUrl: string }> {
+    const params = new HttpParams().set('redirect_url', redirectUrl);
+    return this.http.get<OAuthResponse>(`${this.apiUrl}/gmail/auth`, { params }).pipe(
+      map((response) => ({ authUrl: response.auth_url })),
+      catchError((error) => throwError(() => toError(error, 'Unable to start Gmail connection.'))),
+    );
+  }
+
+  connectGmail(workspaceId: string): Observable<void> {
+    const redirectUrl = new URL(`/workspaces/${workspaceId}/settings/integrations`, window.location.origin).toString();
+    return this.getGmailAuthUrl(redirectUrl).pipe(
+      map(({ authUrl }) => {
+        window.location.assign(authUrl);
+      }),
+    );
+  }
+
+  getGmailConnection(): Observable<GmailConnectionState> {
+    return this.getIntegrations().pipe(
+      map((integrations) => {
+        const gmailIntegration = integrations.find((integration) => integration.provider === 'gmail');
+        if (!gmailIntegration) {
+          return {
+            connected: false,
+          };
+        }
+
+        const metadata = this.parseMetadata(gmailIntegration.metadata);
+        return {
+          connected: true,
+          email: this.readString(metadata['email']),
+          name: this.readString(metadata['name']),
+          lastConnectedAt: gmailIntegration.updated_at ? new Date(gmailIntegration.updated_at) : undefined,
+        };
+      }),
+      catchError((error) => throwError(() => toError(error, 'Unable to load Gmail connection.'))),
+    );
+  }
+
+  disconnectGmail(): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/gmail`).pipe(
+      catchError((error) => throwError(() => toError(error, 'Unable to disconnect Gmail.'))),
     );
   }
 

@@ -19,7 +19,10 @@ describe('WorkspaceIntegrationsComponent', () => {
       'connectGitHub',
       'updateGitHubRepos',
       'disconnectGitHub',
-      'syncGitHub'
+      'syncGitHub',
+      'getGmailConnection',
+      'connectGmail',
+      'disconnectGmail'
     ]);
 
     mockIntegrationService.getSlackChannels.and.returnValue(of({
@@ -49,6 +52,15 @@ describe('WorkspaceIntegrationsComponent', () => {
     mockIntegrationService.disconnectGitHub.and.returnValue(of(void 0));
     mockIntegrationService.connectGitHub.and.returnValue(of(void 0));
 
+    mockIntegrationService.getGmailConnection.and.returnValue(of({
+      connected: true,
+      email: 'alerts@example.com',
+      name: 'Team Inbox',
+      lastConnectedAt: new Date('2026-03-25T11:00:00Z')
+    }));
+    mockIntegrationService.disconnectGmail.and.returnValue(of(void 0));
+    mockIntegrationService.connectGmail.and.returnValue(of(void 0));
+
     await TestBed.configureTestingModule({
       imports: [WorkspaceIntegrationsComponent],
       providers: [
@@ -58,7 +70,8 @@ describe('WorkspaceIntegrationsComponent', () => {
           useValue: {
             snapshot: {
               paramMap: convertToParamMap({ id: 'workspace-1' })
-            }
+            },
+            queryParamMap: of(convertToParamMap({}))
           }
         }
       ]
@@ -75,6 +88,7 @@ describe('WorkspaceIntegrationsComponent', () => {
     expect(compiled.textContent).toContain('Sentinent Engineering');
     expect(compiled.textContent).toContain('Sentinent Ops');
     expect(compiled.textContent).toContain('general');
+    expect(compiled.textContent).toContain('alerts@example.com');
   });
 
   it('should trigger sync and show refreshed item count', () => {
@@ -90,5 +104,12 @@ describe('WorkspaceIntegrationsComponent', () => {
 
     expect(mockIntegrationService.updateSlackChannels).toHaveBeenCalledWith('workspace-1', ['C123']);
     expect(component.slackFeedbackMessage).toContain('saved');
+  });
+
+  it('should trigger the Gmail OAuth flow from the workspace page', () => {
+    component.connectGmail();
+
+    expect(mockIntegrationService.connectGmail).toHaveBeenCalledWith('workspace-1');
+    expect(component.gmailFeedbackMessage).toContain('Starting Gmail connection');
   });
 });
