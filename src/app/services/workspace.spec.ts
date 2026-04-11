@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { WorkspaceService } from './workspace';
+import { Workspace } from '../models/workspace';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceService;
@@ -95,5 +96,46 @@ describe('WorkspaceService', () => {
     request.flush(null, { status: 204, statusText: 'No Content' });
 
     expect(deleted).toBeTrue();
+  });
+
+  it('updates a workspace through the backend API', () => {
+    let updatedWorkspace: Workspace | undefined;
+
+    service.updateWorkspace('1', 'Updated Workspace', 'Updated description').subscribe((result) => {
+      updatedWorkspace = result;
+    });
+
+    const request = httpMock.expectOne('/api/workspaces/1');
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({
+      name: 'Updated Workspace',
+      description: 'Updated description'
+    });
+    request.flush({
+      id: 1,
+      name: 'Updated Workspace',
+      description: 'Updated description',
+      owner_id: 7,
+      created_at: '2026-03-24T10:00:00Z',
+    });
+
+    expect(updatedWorkspace).toBeTruthy();
+    expect(updatedWorkspace?.id).toBe('1');
+    expect(updatedWorkspace?.name).toBe('Updated Workspace');
+    expect(updatedWorkspace?.description).toBe('Updated description');
+  });
+
+  it('returns undefined when updating a missing workspace', () => {
+    let resultValue: Workspace | undefined = undefined;
+
+    service.updateWorkspace('999', 'Nonexistent', 'Description').subscribe((result) => {
+      resultValue = result;
+    });
+
+    const request = httpMock.expectOne('/api/workspaces/999');
+    expect(request.request.method).toBe('PATCH');
+    request.flush('Workspace not found', { status: 404, statusText: 'Not Found' });
+
+    expect(resultValue).toBeUndefined();
   });
 });
