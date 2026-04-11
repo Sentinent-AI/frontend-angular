@@ -71,6 +71,11 @@
       </form>
 
       <form *ngIf="isRegisterVisible" (ngSubmit)="handleRegister()" class="form-section" novalidate>
+        <label class="input-label" for="regFullName">Full Name</label>
+        <input id="regFullName" name="regFullName" class="input-field" type="text"
+          [class.error]="!!registerError" autocomplete="name" [(ngModel)]="regFullName" (input)="onRegisterFullNameInput()"
+          placeholder="Avery Johnson">
+
         <label class="input-label" for="regEmail">Email</label>
         <input id="regEmail" name="regEmail" class="input-field" type="email"
           [class.error]="!!registerError" autocomplete="email" [(ngModel)]="regEmail" (input)="onRegisterEmailInput()"
@@ -79,6 +84,24 @@
         <label class="input-label" for="regPassword">Password</label>
         <input id="regPassword" name="regPassword" class="input-field" type="password" [(ngModel)]="regPassword"
           (input)="onRegisterPasswordInput()" placeholder="••••••••••••">
+
+        <div class="profile-grid">
+          <div>
+            <label class="input-label" for="regJobTitle">Job Title <span class="optional-label">(Optional)</span></label>
+            <input id="regJobTitle" name="regJobTitle" class="input-field" type="text"
+              autocomplete="organization-title" [(ngModel)]="regJobTitle" (input)="onRegisterJobTitleInput()"
+              placeholder="Product Manager">
+          </div>
+
+          <div>
+            <label class="input-label" for="regOrganization">Organization or Team <span class="optional-label">(Optional)</span></label>
+            <input id="regOrganization" name="regOrganization" class="input-field" type="text"
+              autocomplete="organization" [(ngModel)]="regOrganization" (input)="onRegisterOrganizationInput()"
+              placeholder="Sentinent Ops">
+          </div>
+        </div>
+
+        <p class="subtle-copy">These details help identify people across workspaces, signals, and integrations.</p>
 
         <button type="submit" class="btn-primary" [disabled]="isRegisterDisabled || isRegisterSubmitting">
           Create Account

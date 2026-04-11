@@ -130,6 +130,7 @@ describe('Login', () => {
 
   it('rejects registration when the email format is invalid', () => {
     component.activeTab = 'register';
+    component.regFullName = 'Alex Rivera';
     component.regEmail = 'invalid-email';
     component.regPassword = 'secret';
 
@@ -140,6 +141,7 @@ describe('Login', () => {
   });
 
   it('disables registration when the email format is invalid', () => {
+    component.regFullName = 'Alex Rivera';
     component.regEmail = 'invalid-email';
     component.regPassword = 'secret';
 
@@ -151,6 +153,7 @@ describe('Login', () => {
       throwError(() => new HttpErrorResponse({ status: 409, error: 'already exists' }))
     );
     component.activeTab = 'register';
+    component.regFullName = 'Alex Rivera';
     component.regEmail = 'user@example.com';
     component.regPassword = 'secret';
 
@@ -164,6 +167,7 @@ describe('Login', () => {
     spyOn(router, 'navigate');
     mockAuthService.signup.and.returnValue(of(void 0));
     component.activeTab = 'register';
+    component.regFullName = 'Alex Rivera';
     component.regEmail = 'new@example.com';
     component.regPassword = 'secret';
 

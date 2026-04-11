@@ -25,8 +25,11 @@ export class Login implements OnInit {
   registerError = '';
   forgotError = '';
 
+  regFullName = '';
   regEmail = '';
   regPassword = '';
+  regJobTitle = '';
+  regOrganization = '';
 
   forgotEmail = '';
 
@@ -116,7 +119,7 @@ export class Login implements OnInit {
   }
 
   handleRegister(): void {
-    if (!this.regEmail.trim() || !this.regPassword.trim()) {
+    if (!this.regFullName.trim() || !this.regEmail.trim() || !this.regPassword.trim()) {
       this.registerError = 'Invalid credentials';
       return;
     }
@@ -127,7 +130,11 @@ export class Login implements OnInit {
     this.isRegisterSubmitting = true;
     this.registerError = '';
 
-    this.authService.signup(this.regEmail.trim(), this.regPassword).pipe(
+    this.authService.signup(this.regEmail.trim(), this.regPassword, {
+      fullName: this.regFullName.trim(),
+      jobTitle: this.regJobTitle.trim(),
+      organization: this.regOrganization.trim(),
+    }).pipe(
       timeout(8000),
       finalize(() => {
         this.isRegisterSubmitting = false;
@@ -135,8 +142,12 @@ export class Login implements OnInit {
       })
     ).subscribe({
       next: () => {
+        this.regFullName = '';
         this.regPassword = '';
+        this.regJobTitle = '';
+        this.regOrganization = '';
         this.loginEmail = this.regEmail.trim();
+        this.regEmail = '';
         this.showForgot = false;
         this.loginError = '';
         this.registerError = '';
@@ -199,7 +210,7 @@ export class Login implements OnInit {
   }
 
   get isRegisterDisabled(): boolean {
-    return !this.regEmail.trim() || !this.regPassword || !this.isValidEmail(this.regEmail);
+    return !this.regFullName.trim() || !this.regEmail.trim() || !this.regPassword || !this.isValidEmail(this.regEmail);
   }
 
   get isAuthFormVisible(): boolean {
@@ -234,7 +245,19 @@ export class Login implements OnInit {
     this.registerError = '';
   }
 
+  onRegisterFullNameInput(): void {
+    this.registerError = '';
+  }
+
   onRegisterPasswordInput(): void {
+    this.registerError = '';
+  }
+
+  onRegisterJobTitleInput(): void {
+    this.registerError = '';
+  }
+
+  onRegisterOrganizationInput(): void {
     this.registerError = '';
   }
 
