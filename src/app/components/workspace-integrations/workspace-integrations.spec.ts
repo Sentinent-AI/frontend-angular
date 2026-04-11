@@ -81,7 +81,7 @@ describe('WorkspaceIntegrationsComponent', () => {
     component.syncNow();
     fixture.detectChanges();
 
-    expect(mockIntegrationService.syncGitHub).toHaveBeenCalled();
+    expect(mockIntegrationService.syncGitHub).toHaveBeenCalledWith('workspace-1');
     expect(component.githubFeedbackMessage).toContain('started');
   });
 
@@ -90,5 +90,9 @@ describe('WorkspaceIntegrationsComponent', () => {
 
     expect(mockIntegrationService.updateSlackChannels).toHaveBeenCalledWith('workspace-1', ['C123']);
     expect(component.slackFeedbackMessage).toContain('saved');
+  });
+
+  it('should load GitHub repositories for the current workspace', () => {
+    expect(mockIntegrationService.getGitHubRepos).toHaveBeenCalledWith('workspace-1');
   });
 });

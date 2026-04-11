@@ -74,11 +74,11 @@ describe('IntegrationService', () => {
   it('maps GitHub repositories using selected repo ids from integration metadata', () => {
     let repos: Array<{ isConnected: boolean }> = [];
 
-    service.getGitHubRepos().subscribe((state) => {
+    service.getGitHubRepos('9').subscribe((state) => {
       repos = state.repos;
     });
 
-    const integrationsRequest = httpMock.expectOne('/api/integrations');
+    const integrationsRequest = httpMock.expectOne('/api/integrations?workspace_id=9');
     expect(integrationsRequest.request.method).toBe('GET');
     integrationsRequest.flush([
       {
@@ -91,7 +91,7 @@ describe('IntegrationService', () => {
       },
     ]);
 
-    const reposRequest = httpMock.expectOne('/api/integrations/github/repos');
+    const reposRequest = httpMock.expectOne('/api/integrations/github/repos?workspace_id=9');
     expect(reposRequest.request.method).toBe('GET');
     reposRequest.flush([
       {
@@ -114,9 +114,9 @@ describe('IntegrationService', () => {
   });
 
   it('persists GitHub repository selections through the backend API', () => {
-    service.updateGitHubRepos([101, 103]).subscribe();
+    service.updateGitHubRepos('9', [101, 103]).subscribe();
 
-    const request = httpMock.expectOne('/api/integrations/github/repos');
+    const request = httpMock.expectOne('/api/integrations/github/repos?workspace_id=9');
     expect(request.request.method).toBe('PATCH');
     expect(request.request.body).toEqual({ repo_ids: [101, 103] });
     request.flush(null, { status: 204, statusText: 'No Content' });
@@ -125,11 +125,11 @@ describe('IntegrationService', () => {
   it('maps GitHub sync start responses into UI sync state', () => {
     let status = '';
 
-    service.syncGitHub().subscribe((result) => {
+    service.syncGitHub('9').subscribe((result) => {
       status = result.status;
     });
 
-    const request = httpMock.expectOne('/api/integrations/github/sync');
+    const request = httpMock.expectOne('/api/integrations/github/sync?workspace_id=9');
     expect(request.request.method).toBe('POST');
     request.flush({ status: 'sync_started' });
 

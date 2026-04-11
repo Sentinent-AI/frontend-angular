@@ -66,7 +66,7 @@ export class WorkspaceIntegrationsComponent implements OnInit {
   connectGitHub(): void {
     this.githubErrorMessage = '';
     this.githubFeedbackMessage = 'Starting GitHub connection...';
-    this.integrationService.connectGitHub().subscribe({
+    this.integrationService.connectGitHub(this.workspaceId).subscribe({
       error: (error: Error) => {
         this.githubErrorMessage = error.message;
         this.githubFeedbackMessage = '';
@@ -75,7 +75,7 @@ export class WorkspaceIntegrationsComponent implements OnInit {
   }
 
   disconnectGitHub(): void {
-    this.integrationService.disconnectGitHub().subscribe(() => {
+    this.integrationService.disconnectGitHub(this.workspaceId).subscribe(() => {
       this.githubSyncStatus = undefined;
       this.githubFeedbackMessage = 'GitHub integration disconnected.';
       this.loadRepos();
@@ -123,7 +123,7 @@ export class WorkspaceIntegrationsComponent implements OnInit {
   saveRepoSelection(): void {
     this.isGitHubSaving = true;
     this.githubErrorMessage = '';
-    this.integrationService.updateGitHubRepos(this.selectedRepoIds).subscribe({
+    this.integrationService.updateGitHubRepos(this.workspaceId, this.selectedRepoIds).subscribe({
       next: () => {
         this.isGitHubSaving = false;
         this.githubFeedbackMessage = 'Repository selection saved.';
@@ -139,7 +139,7 @@ export class WorkspaceIntegrationsComponent implements OnInit {
   syncNow(): void {
     this.isSyncing = true;
     this.githubErrorMessage = '';
-    this.integrationService.syncGitHub().subscribe({
+    this.integrationService.syncGitHub(this.workspaceId).subscribe({
       next: (status) => {
         this.githubSyncStatus = status;
         this.isSyncing = false;
@@ -175,7 +175,7 @@ export class WorkspaceIntegrationsComponent implements OnInit {
   }
 
   private loadRepos(): void {
-    this.integrationService.getGitHubRepos().subscribe(response => {
+    this.integrationService.getGitHubRepos(this.workspaceId).subscribe(response => {
       this.isGitHubConnected = response.connected;
       this.repos = response.repos;
       this.selectedRepoIds = response.repos.filter(repo => repo.isConnected).map(repo => repo.id);

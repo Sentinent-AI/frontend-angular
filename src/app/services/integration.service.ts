@@ -114,23 +114,30 @@ export class IntegrationService {
     );
   }
 
-  getGitHubAuthUrl(): Observable<{ authUrl: string }> {
-    return this.http.get<OAuthResponse>(`${this.apiUrl}/github/auth`).pipe(
+  getGitHubAuthUrl(workspaceId: string, redirectUrl?: string): Observable<{ authUrl: string }> {
+    let params = new HttpParams().set('workspace_id', workspaceId);
+    if (redirectUrl) {
+      params = params.set('redirect_url', redirectUrl);
+    }
+
+    return this.http.get<OAuthResponse>(`${this.apiUrl}/github/auth`, { params }).pipe(
       map((response) => ({ authUrl: response.auth_url })),
       catchError((error) => throwError(() => toError(error, 'Unable to start GitHub connection.'))),
     );
   }
 
-  connectGitHub(): Observable<void> {
-    return this.getGitHubAuthUrl().pipe(
+  connectGitHub(workspaceId: string): Observable<void> {
+    const redirectUrl = typeof window !== 'undefined' ? window.location.href : undefined;
+
+    return this.getGitHubAuthUrl(workspaceId, redirectUrl).pipe(
       map(({ authUrl }) => {
         window.location.assign(authUrl);
       }),
     );
   }
 
-  getGitHubRepos(): Observable<GitHubConnectionState> {
-    return this.getIntegrations().pipe(
+  getGitHubRepos(workspaceId: string): Observable<GitHubConnectionState> {
+    return this.getIntegrations(workspaceId).pipe(
       switchMap((integrations) => {
         const githubIntegration = integrations.find((integration) => integration.provider === 'github');
         if (!githubIntegration) {
@@ -143,7 +150,9 @@ export class IntegrationService {
         const metadata = this.parseMetadata(githubIntegration.metadata);
         const selectedRepoIds = this.readNumberArray(metadata['selected_repo_ids']);
 
-        return this.http.get<GitHubRepoResponse[]>(`${this.apiUrl}/github/repos`).pipe(
+        const params = new HttpParams().set('workspace_id', workspaceId);
+
+        return this.http.get<GitHubRepoResponse[]>(`${this.apiUrl}/github/repos`, { params }).pipe(
           map((repos) => ({
             connected: true,
             repos: repos.map((repo) => this.mapGitHubRepo(repo, selectedRepoIds)),
@@ -157,20 +166,23 @@ export class IntegrationService {
     );
   }
 
-  updateGitHubRepos(repoIds: number[]): Observable<void> {
-    return this.http.patch<void>(`${this.apiUrl}/github/repos`, { repo_ids: repoIds }).pipe(
+  updateGitHubRepos(workspaceId: string, repoIds: number[]): Observable<void> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.patch<void>(`${this.apiUrl}/github/repos`, { repo_ids: repoIds }, { params }).pipe(
       catchError((error) => throwError(() => toError(error, 'Unable to save repository selection.'))),
     );
   }
 
-  disconnectGitHub(): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/github`).pipe(
+  disconnectGitHub(workspaceId: string): Observable<void> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.delete<void>(`${this.apiUrl}/github`, { params }).pipe(
       catchError((error) => throwError(() => toError(error, 'Unable to disconnect GitHub.'))),
     );
   }
 
-  syncGitHub(): Observable<SyncStatus> {
-    return this.http.post<GitHubSyncResponse>(`${this.apiUrl}/github/sync`, {}).pipe(
+  syncGitHub(workspaceId: string): Observable<SyncStatus> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.post<GitHubSyncResponse>(`${this.apiUrl}/github/sync`, {}, { params }).pipe(
       map((response) => {
         const status: SyncStatus['status'] = response.status === 'sync_started' ? 'in_progress' : 'failed';
         return {
