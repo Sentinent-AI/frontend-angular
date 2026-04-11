@@ -29,8 +29,11 @@ export class Dashboard implements OnInit {
   filters: SignalFilters = { source: 'all', status: 'all' };
   githubBanner = '';
   slackBanner = '';
+  currentUserId: string | null = null;
 
   ngOnInit() {
+    this.currentUserId = this.authService.getCurrentUserId();
+
     this.workspaceService.getWorkspaces().subscribe({
       next: ws => {
         this.workspaces = ws;
@@ -57,6 +60,10 @@ export class Dashboard implements OnInit {
     this.loadSignals();
   }
 
+  canEditWorkspace(workspace: Workspace): boolean {
+    return this.currentUserId !== null && workspace.ownerId === this.currentUserId;
+  }
+
   deleteWorkspace(workspace: Workspace) {
     const confirmed = window.confirm(`Delete workspace "${workspace.name}"?`);
     if (!confirmed) {
@@ -68,6 +75,7 @@ export class Dashboard implements OnInit {
         return;
       }
       this.workspaces = this.workspaces.filter(ws => ws.id !== workspace.id);
+      this.cdr.detectChanges();
     });
   }
 
@@ -97,6 +105,7 @@ export class Dashboard implements OnInit {
   private loadSignals(): void {
     this.signalService.getSignals(this.filters).subscribe(signals => {
       this.signals = signals;
+      this.cdr.detectChanges();
     });
   }
 }
