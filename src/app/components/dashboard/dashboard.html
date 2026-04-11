@@ -37,7 +37,7 @@
         <small>Created: {{ ws.createdDate | date: 'mediumDate' }}</small>
         <div class="card-actions">
           <a [routerLink]="['/workspaces', ws.id, 'decisions']" class="action-btn open-btn">Open</a>
-          <a [routerLink]="['/workspaces', ws.id, 'edit']" class="action-btn edit-btn">Edit</a>
+          <a *ngIf="canEditWorkspace(ws)" [routerLink]="['/workspaces', ws.id, 'edit']" class="action-btn edit-btn">Edit</a>
           <button type="button" class="action-btn delete-btn" (click)="deleteWorkspace(ws)">Delete</button>
         </div>
       </article>

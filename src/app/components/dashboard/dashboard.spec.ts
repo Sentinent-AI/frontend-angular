@@ -23,7 +23,8 @@ describe('Dashboard', () => {
         };
 
         mockAuthService = {
-            logout: jasmine.createSpy('logout')
+            logout: jasmine.createSpy('logout'),
+            getCurrentUserId: jasmine.createSpy('getCurrentUserId').and.returnValue('u1')
         };
 
         mockSignalService = {
@@ -89,6 +90,24 @@ describe('Dashboard', () => {
     it('should render workspaces', () => {
         const compiled = fixture.nativeElement as HTMLElement;
         expect(compiled.querySelector('.workspace-card h3')?.textContent).toContain('Test Workspace');
+    });
+
+    it('should hide edit action for workspaces not owned by the current user', () => {
+        mockWorkspaceService.getWorkspaces.and.returnValue(of([
+            { id: '1', name: 'Owned Workspace', description: 'Owned Desc', createdDate: new Date(), ownerId: 'u1' },
+            { id: '2', name: 'Shared Workspace', description: 'Shared Desc', createdDate: new Date(), ownerId: 'u2' }
+        ]));
+
+        fixture = TestBed.createComponent(Dashboard);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+
+        const cards = Array.from(fixture.nativeElement.querySelectorAll('.workspace-card')) as HTMLElement[];
+        const ownedCard = cards.find(card => card.textContent?.includes('Owned Workspace'));
+        const sharedCard = cards.find(card => card.textContent?.includes('Shared Workspace'));
+
+        expect(ownedCard?.textContent).toContain('Edit');
+        expect(sharedCard?.textContent).not.toContain('Edit');
     });
 
     it('should call logout on button click', () => {
