@@ -23,7 +23,7 @@ describe('Dashboard', () => {
         };
 
         mockAuthService = {
-            logout: jasmine.createSpy('logout')
+            logout: jasmine.createSpy('logout').and.returnValue(of(void 0))
         };
 
         mockSignalService = {
@@ -92,9 +92,11 @@ describe('Dashboard', () => {
     });
 
     it('should call logout on button click', () => {
+        spyOn(router, 'navigate');
         const button = fixture.nativeElement.querySelector('.logout-btn');
         button.click();
         expect(mockAuthService.logout).toHaveBeenCalled();
+        expect(router.navigate).toHaveBeenCalledWith(['/login']);
     });
 
     it('should render github signals', () => {

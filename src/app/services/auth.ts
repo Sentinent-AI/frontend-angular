@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { map, Observable, tap } from 'rxjs';
+import { catchError, map, Observable, of, tap } from 'rxjs';
 
 interface AuthResponse {
   token: string;
@@ -29,8 +29,11 @@ export class AuthService {
     );
   }
 
-  logout(): void {
+  logout(): Observable<void> {
     localStorage.removeItem(this.tokenKey);
+    return this.http.post<void>(`${this.apiUrl}/logout`, {}).pipe(
+      catchError(() => of(void 0)),
+    );
   }
 
   isLoggedIn(): boolean {
