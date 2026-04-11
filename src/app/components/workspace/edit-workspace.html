@@ -24,7 +24,7 @@
         <span>Loading workspace...</span>
       </div>
 
-      <form *ngIf="!isLoading && !error" (ngSubmit)="onSubmit()" #workspaceForm="ngForm" novalidate>
+      <form *ngIf="!isLoading && hasWorkspace" (ngSubmit)="onSubmit()" #workspaceForm="ngForm" novalidate>
         <div class="form-group">
           <label for="workspace-name">Workspace Name</label>
           <input

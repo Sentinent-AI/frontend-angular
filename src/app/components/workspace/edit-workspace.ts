@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -18,10 +18,12 @@ export class EditWorkspaceComponent implements OnInit {
   error = '';
   isSubmitting = false;
   isLoading = true;
+  hasWorkspace = false;
 
   private workspaceService = inject(WorkspaceService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -35,13 +37,24 @@ export class EditWorkspaceComponent implements OnInit {
   }
 
   loadWorkspace(id: string): void {
-    this.workspaceService.getWorkspace(id).subscribe(workspace => {
-      this.isLoading = false;
-      if (workspace) {
-        this.name = workspace.name;
-        this.description = workspace.description || '';
-      } else {
-        this.error = 'Workspace not found';
+    this.workspaceService.getWorkspace(id).subscribe({
+      next: workspace => {
+        this.isLoading = false;
+        if (workspace) {
+          this.hasWorkspace = true;
+          this.name = workspace.name;
+          this.description = workspace.description || '';
+        } else {
+          this.hasWorkspace = false;
+          this.error = 'Workspace not found';
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoading = false;
+        this.hasWorkspace = false;
+        this.error = 'Unable to load workspace. Please try again.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -57,7 +70,14 @@ export class EditWorkspaceComponent implements OnInit {
     this.error = '';
 
     this.workspaceService.updateWorkspace(this.workspaceId, trimmedName, this.description.trim()).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+      next: (workspace) => {
+        if (workspace) {
+          this.router.navigate(['/dashboard']);
+        } else {
+          this.error = 'Workspace not found.';
+          this.isSubmitting = false;
+        }
+      },
       error: () => {
         this.error = 'Unable to update workspace. Please try again.';
         this.isSubmitting = false;
