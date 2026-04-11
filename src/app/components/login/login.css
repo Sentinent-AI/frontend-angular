@@ -218,10 +218,24 @@ h1 {
   animation: fadeIn 0.25s ease;
 }
 
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
 .input-label {
   font-size: 13px;
   color: var(--muted);
   font-weight: 600;
+}
+
+.optional-label {
+  display: inline-block;
+  margin-left: 4px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.01em;
 }
 
 .input-field {
@@ -243,6 +257,13 @@ h1 {
   border-color: var(--error);
 }
 
+.subtle-copy {
+  margin: -2px 0 4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .form-row {
   margin: 2px 0 6px;
   width: 100%;
@@ -251,6 +272,7 @@ h1 {
   align-items: center;
   gap: 10px;
 }
+
 
 .checkbox-wrapper {
   display: flex;

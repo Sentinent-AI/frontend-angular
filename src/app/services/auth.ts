@@ -6,6 +6,12 @@ interface AuthResponse {
   token: string;
 }
 
+export interface SignupProfile {
+  fullName: string;
+  jobTitle?: string;
+  organization?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -14,8 +20,14 @@ export class AuthService {
   private apiUrl = '/api';
   private tokenKey = 'sentinent_token';
 
-  signup(email: string, password: string): Observable<void> {
-    return this.http.post(`${this.apiUrl}/signup`, { email, password }, {
+  signup(email: string, password: string, profile?: SignupProfile): Observable<void> {
+    return this.http.post(`${this.apiUrl}/signup`, {
+      email,
+      password,
+      full_name: profile?.fullName ?? '',
+      job_title: profile?.jobTitle ?? '',
+      organization: profile?.organization ?? '',
+    }, {
       observe: 'response',
       responseType: 'text'
     }).pipe(
