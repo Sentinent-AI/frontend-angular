@@ -49,6 +49,26 @@ export class AuthService {
     return !!this.getToken();
   }
 
+  getCurrentUserId(): string | null {
+    const token = this.getToken();
+    if (!token) {
+      return null;
+    }
+
+    const payload = token.split('.')[1];
+    if (!payload) {
+      return null;
+    }
+
+    try {
+      const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const decodedPayload = JSON.parse(atob(normalizedPayload)) as { user_id?: number | string };
+      return decodedPayload.user_id === undefined ? null : String(decodedPayload.user_id);
+    } catch {
+      return null;
+    }
+  }
+
   getToken(): string | null {
     return localStorage.getItem(this.tokenKey);
   }
