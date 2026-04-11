@@ -209,7 +209,7 @@ h1 {
 .auth-tab.active {
   background: var(--bg);
   color: var(--fg);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .form-section {
@@ -243,14 +243,15 @@ h1 {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px 14px;
-  background: var(--bg);
-  color: var(--fg);
+  background: #ffffff;
+  color: #000000;
+  transition: all 0.2s ease;
 }
 
 .input-field:focus {
   outline: none;
-  border-color: var(--fg);
-  box-shadow: 0 0 0 3px var(--subtle);
+  border-color: #000000;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.05);
 }
 
 .input-field.error {
