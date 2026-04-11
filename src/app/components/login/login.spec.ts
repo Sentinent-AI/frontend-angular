@@ -15,7 +15,7 @@ describe('Login', () => {
   let document: Document;
 
   beforeEach(async () => {
-    mockAuthService = jasmine.createSpyObj<AuthService>('AuthService', ['login', 'signup']);
+    mockAuthService = jasmine.createSpyObj<AuthService>('AuthService', ['login', 'signup', 'requestPasswordReset']);
 
     spyOn(localStorage, 'getItem').and.returnValue(null);
     spyOn(localStorage, 'setItem');
@@ -183,5 +183,20 @@ describe('Login', () => {
 
     expect(component.forgotError).toBe('Enter a valid email address');
     expect(component.isForgotSubmitting).toBeFalse();
+  });
+
+  it('requests a password reset link from the backend', () => {
+    mockAuthService.requestPasswordReset.and.returnValue(of({
+      message: 'If an account exists, a reset link has been generated.',
+      resetUrl: 'http://localhost:4200/reset-password/reset-token',
+    }));
+    component.showForgotPassword();
+    component.forgotEmail = 'user@example.com';
+
+    component.handleForgot();
+
+    expect(mockAuthService.requestPasswordReset).toHaveBeenCalledWith('user@example.com');
+    expect(component.showSuccess).toBeTrue();
+    expect(component.successActionUrl).toContain('/reset-password/reset-token');
   });
 });

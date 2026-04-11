@@ -6,6 +6,16 @@ interface AuthResponse {
   token: string;
 }
 
+interface ForgotPasswordResponse {
+  message: string;
+  reset_url?: string;
+}
+
+interface ResetTokenValidationResponse {
+  valid: boolean;
+  email: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -27,6 +37,28 @@ export class AuthService {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password }).pipe(
       tap(res => this.setToken(res.token))
     );
+  }
+
+  requestPasswordReset(email: string): Observable<{ message: string; resetUrl?: string }> {
+    return this.http.post<ForgotPasswordResponse>(`${this.apiUrl}/forgot-password`, { email }).pipe(
+      map((response) => ({
+        message: response.message,
+        resetUrl: response.reset_url,
+      })),
+    );
+  }
+
+  validatePasswordResetToken(token: string): Observable<{ valid: boolean; email: string }> {
+    return this.http.get<ResetTokenValidationResponse>(`${this.apiUrl}/reset-password/${token}`).pipe(
+      map((response) => ({
+        valid: response.valid,
+        email: response.email,
+      })),
+    );
+  }
+
+  resetPassword(token: string, password: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/reset-password/${token}`, { password });
   }
 
   logout(): void {

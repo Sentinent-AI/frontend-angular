@@ -306,6 +306,11 @@ h1 {
   cursor: default;
 }
 
+.success-link {
+  margin-top: 14px;
+  text-decoration: none;
+}
+
 .subtle-copy {
   margin: 0 0 6px;
   color: var(--muted);

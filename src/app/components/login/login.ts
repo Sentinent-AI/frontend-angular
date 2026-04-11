@@ -34,6 +34,8 @@ export class Login implements OnInit {
   showSuccess = false;
   successTitle = 'Check your email';
   successText = 'We sent you a verification link.';
+  successActionLabel = '';
+  successActionUrl = '';
 
   isDarkMode = false;
   isLoginSubmitting = false;
@@ -176,17 +178,39 @@ export class Login implements OnInit {
       return;
     }
     this.isForgotSubmitting = true;
-    setTimeout(() => {
-      this.isForgotSubmitting = false;
-      this.showSuccessMessage('Check your email', 'We sent a password reset link.');
-    }, 1200);
+
+    this.authService.requestPasswordReset(this.forgotEmail.trim()).pipe(
+      timeout(8000),
+      finalize(() => {
+        this.isForgotSubmitting = false;
+        this.syncView();
+      })
+    ).subscribe({
+      next: (response) => {
+        this.showSuccessMessage(
+          'Check your email',
+          response.resetUrl
+            ? 'A password reset link is ready. Use the button below to continue.'
+            : response.message,
+          response.resetUrl ? 'Open Reset Link' : '',
+          response.resetUrl ?? ''
+        );
+        this.syncView();
+      },
+      error: () => {
+        this.forgotError = 'Could not start password reset. Please try again.';
+        this.syncView();
+      }
+    });
   }
 
-  private showSuccessMessage(title: string, text: string): void {
+  private showSuccessMessage(title: string, text: string, actionLabel: string = '', actionUrl: string = ''): void {
     this.showForgot = false;
     this.showSuccess = true;
     this.successTitle = title;
     this.successText = text;
+    this.successActionLabel = actionLabel;
+    this.successActionUrl = actionUrl;
   }
 
   private applyTheme(): void {
