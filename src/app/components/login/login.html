@@ -127,6 +127,7 @@
         <div class="success-icon">✓</div>
         <h3>{{ successTitle }}</h3>
         <p>{{ successText }}</p>
+        <a *ngIf="successActionUrl" class="btn-primary success-link" [href]="successActionUrl">{{ successActionLabel }}</a>
       </div>
 
     </div>

@@ -329,10 +329,9 @@ h1 {
   cursor: default;
 }
 
-.subtle-copy {
-  margin: 0 0 6px;
-  color: var(--muted);
-  font-size: 13px;
+.success-link {
+  margin-top: 14px;
+  text-decoration: none;
 }
 
 .error-text,

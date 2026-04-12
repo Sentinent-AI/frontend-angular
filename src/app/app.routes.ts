@@ -9,12 +9,21 @@ export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'signup', component: Login },
   {
+    path: 'reset-password/:token',
+    loadComponent: () => import('./components/reset-password/reset-password').then(m => m.ResetPasswordComponent)
+  },
+  {
     path: 'invitations/:token',
     loadComponent: () => import('./components/accept-invitation/accept-invitation').then(m => m.AcceptInvitationComponent)
   },
   {
     path: 'dashboard',
     loadComponent: () => import('./components/dashboard/dashboard').then(m => m.Dashboard),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'profile',
+    loadComponent: () => import('./components/profile/profile').then(m => m.ProfileComponent),
     canActivate: [authGuard]
   },
   {
