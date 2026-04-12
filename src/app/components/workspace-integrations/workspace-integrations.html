@@ -125,4 +125,58 @@
       <span *ngIf="githubSyncStatus.itemsSynced">({{ githubSyncStatus.itemsSynced }} items)</span>
     </p>
   </section>
+
+  <!-- Jira Integration -->
+  <article class="integration-card">
+    <div class="card-copy">
+      <span class="provider-badge jira-badge">Jira</span>
+      <h3>Jira connection</h3>
+      <p *ngIf="isJiraConnected; else jiraDisconnectedState">
+        Connected to Jira.
+      </p>
+      <ng-template #jiraDisconnectedState>
+        <p>Not connected yet. Start the OAuth flow to import assigned issues from Jira.</p>
+      </ng-template>
+    </div>
+
+    <div class="card-actions">
+      <button *ngIf="!isJiraConnected" type="button" class="primary-btn jira-btn" (click)="connectJira()">Connect Jira</button>
+      <button *ngIf="isJiraConnected" type="button" class="secondary-btn" (click)="disconnectJira()">Disconnect</button>
+      <button *ngIf="isJiraConnected" type="button" class="primary-btn" [disabled]="isJiraSyncing" (click)="syncJiraNow()">
+        {{ isJiraSyncing ? 'Syncing...' : 'Sync Now' }}
+      </button>
+    </div>
+  </article>
+
+  <p class="feedback success" *ngIf="jiraFeedbackMessage">{{ jiraFeedbackMessage }}</p>
+  <p class="feedback error" *ngIf="jiraErrorMessage">{{ jiraErrorMessage }}</p>
+
+  <section class="selection-card" *ngIf="isJiraConnected">
+    <div class="section-head">
+      <div>
+        <h3>Jira Cloud Resources</h3>
+        <p>Accessible Atlassian cloud sites.</p>
+      </div>
+    </div>
+
+    <div class="repo-list">
+      <div class="repo-item" *ngFor="let resource of jiraResources">
+        <span>
+          <strong>{{ resource.name }}</strong>
+          <small>{{ resource.url }}</small>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="sync-card" *ngIf="isJiraConnected">
+    <h3>Jira sync status</h3>
+    <p *ngIf="jiraLastSyncAt">Last sync: {{ jiraLastSyncAt | date: 'medium' }}</p>
+    <p *ngIf="!jiraLastSyncAt">No sync has run yet.</p>
+    <p *ngIf="jiraSyncStatus">
+      Current status:
+      <strong>{{ jiraSyncStatus.status }}</strong>
+    </p>
+  </section>
+
 </section>

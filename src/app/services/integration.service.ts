@@ -7,7 +7,7 @@ import { toError } from './http-error';
 
 interface IntegrationRecord {
   id: number;
-  provider: 'slack' | 'github';
+  provider: 'slack' | 'github' | 'jira';
   workspace_id?: number;
   metadata?: string;
   updated_at: string;
@@ -55,7 +55,7 @@ export class IntegrationService {
   connectSlack(workspaceId: string): Observable<void> {
     return this.getSlackAuthUrl(workspaceId).pipe(
       map(({ authUrl }) => {
-        window.location.assign(authUrl);
+        window.open(authUrl, '_blank');
       }),
     );
   }
@@ -124,7 +124,7 @@ export class IntegrationService {
   connectGitHub(): Observable<void> {
     return this.getGitHubAuthUrl().pipe(
       map(({ authUrl }) => {
-        window.location.assign(authUrl);
+        window.open(authUrl, '_blank');
       }),
     );
   }
@@ -179,6 +179,65 @@ export class IntegrationService {
         };
       }),
       catchError((error) => throwError(() => toError(error, 'Unable to sync GitHub.'))),
+    );
+  }
+
+  getJiraAuthUrl(workspaceId: string): Observable<{ authUrl: string }> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.get<OAuthResponse>(`${this.apiUrl}/jira/auth`, { params }).pipe(
+      map((response) => ({ authUrl: response.auth_url })),
+      catchError((error) => throwError(() => toError(error, 'Unable to start Jira connection.'))),
+    );
+  }
+
+  connectJira(workspaceId: string): Observable<void> {
+    return this.getJiraAuthUrl(workspaceId).pipe(
+      map(({ authUrl }) => {
+        window.open(authUrl, '_blank');
+      }),
+    );
+  }
+
+  getJiraProjects(workspaceId: string): Observable<any> {
+    return this.getIntegrations(workspaceId).pipe(
+      switchMap((integrations) => {
+        const jiraIntegration = integrations.find((integration) => integration.provider === 'jira');
+        if (!jiraIntegration) {
+          return of({
+            connected: false,
+            resources: [],
+          });
+        }
+
+        const params = new HttpParams().set('workspace_id', workspaceId);
+        return this.http.get<any[]>(`${this.apiUrl}/jira/projects`, { params }).pipe(
+          map((resources) => ({
+            connected: true,
+            resources: resources,
+            lastSyncAt: jiraIntegration.updated_at ? new Date(jiraIntegration.updated_at) : undefined,
+          })),
+        );
+      }),
+      catchError((error) => throwError(() => toError(error, 'Unable to load Jira projects.'))),
+    );
+  }
+
+  disconnectJira(workspaceId: string): Observable<void> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.delete<void>(`${this.apiUrl}/jira`, { params }).pipe(
+      catchError((error) => throwError(() => toError(error, 'Unable to disconnect Jira.'))),
+    );
+  }
+
+  syncJira(workspaceId: string): Observable<any> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.post<any>(`${this.apiUrl}/jira/sync`, {}, { params }).pipe(
+      map((response) => {
+        return {
+          status: response.status === 'sync_started' ? 'in_progress' : 'failed',
+        };
+      }),
+      catchError((error) => throwError(() => toError(error, 'Unable to sync Jira.'))),
     );
   }
 

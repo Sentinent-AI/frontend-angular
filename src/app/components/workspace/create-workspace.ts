@@ -31,7 +31,17 @@ export class CreateWorkspace {
     this.error = '';
 
     this.workspaceService.createWorkspace(trimmedName, this.description.trim()).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+      next: () => {
+        this.router.navigate(['/dashboard']).then(success => {
+          if (!success) {
+            this.isSubmitting = false;
+            this.error = 'Navigation failed. Workspace was created, but unable to load dashboard.';
+          }
+        }).catch(() => {
+          this.isSubmitting = false;
+          this.error = 'An error occurred while loading the dashboard.';
+        });
+      },
       error: () => {
         this.error = 'Unable to create workspace. Please try again.';
         this.isSubmitting = false;

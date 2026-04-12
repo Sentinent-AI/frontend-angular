@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { IntegrationService } from '../../services/integration.service';
 import { GitHubRepo, SyncStatus } from '../../models/github-integration.model';
 import { SlackChannel } from '../../models/slack-integration.model';
+import { AtlassianResource, JiraSyncStatus } from '../../models/jira-integration.model';
 
 @Component({
   selector: 'app-workspace-integrations',
@@ -12,7 +13,7 @@ import { SlackChannel } from '../../models/slack-integration.model';
   templateUrl: './workspace-integrations.html',
   styleUrl: './workspace-integrations.css'
 })
-export class WorkspaceIntegrationsComponent implements OnInit {
+export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly integrationService = inject(IntegrationService);
 
@@ -39,10 +40,40 @@ export class WorkspaceIntegrationsComponent implements OnInit {
   isGitHubSaving = false;
   isSyncing = false;
 
+  isJiraConnected = false;
+  jiraResources: AtlassianResource[] = [];
+  jiraLastSyncAt?: Date;
+  jiraSyncStatus?: JiraSyncStatus;
+  jiraFeedbackMessage = '';
+  jiraErrorMessage = '';
+  isJiraSyncing = false;
+
   ngOnInit(): void {
     this.workspaceId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.loadAllIntegrations();
+    window.addEventListener('focus', this.onWindowFocus);
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('focus', this.onWindowFocus);
+  }
+
+  private onWindowFocus = (): void => {
+    // If we have an active feedback message, let's refresh to see if connection succeeded in background
+    if (this.slackFeedbackMessage === 'Starting Slack connection...' || 
+        this.githubFeedbackMessage === 'Starting GitHub connection...' || 
+        this.jiraFeedbackMessage === 'Starting Jira connection...') {
+      this.slackFeedbackMessage = '';
+      this.githubFeedbackMessage = '';
+      this.jiraFeedbackMessage = '';
+      this.loadAllIntegrations();
+    }
+  };
+
+  private loadAllIntegrations(): void {
     this.loadSlackChannels();
     this.loadRepos();
+    this.loadJira();
   }
 
   connectSlack(): void {
@@ -79,6 +110,30 @@ export class WorkspaceIntegrationsComponent implements OnInit {
       this.githubSyncStatus = undefined;
       this.githubFeedbackMessage = 'GitHub integration disconnected.';
       this.loadRepos();
+    });
+  }
+
+  connectJira(): void {
+    this.jiraErrorMessage = '';
+    this.jiraFeedbackMessage = 'Starting Jira connection...';
+    this.integrationService.connectJira(this.workspaceId).subscribe({
+      error: (error: Error) => {
+        this.jiraErrorMessage = error.message;
+        this.jiraFeedbackMessage = '';
+      }
+    });
+  }
+
+  disconnectJira(): void {
+    this.integrationService.disconnectJira(this.workspaceId).subscribe({
+      next: () => {
+        this.jiraSyncStatus = undefined;
+        this.jiraFeedbackMessage = 'Jira integration disconnected.';
+        this.loadJira();
+      },
+      error: (error: Error) => {
+        this.jiraErrorMessage = error.message;
+      }
     });
   }
 
@@ -155,6 +210,25 @@ export class WorkspaceIntegrationsComponent implements OnInit {
     });
   }
 
+  syncJiraNow(): void {
+    this.isJiraSyncing = true;
+    this.jiraErrorMessage = '';
+    this.integrationService.syncJira(this.workspaceId).subscribe({
+      next: (status) => {
+        this.jiraSyncStatus = status;
+        this.isJiraSyncing = false;
+        this.jiraFeedbackMessage = status.status === 'in_progress'
+          ? 'Jira sync started. Signals will refresh shortly.'
+          : 'Jira sync could not be started.';
+        this.loadJira();
+      },
+      error: (error: Error) => {
+        this.isJiraSyncing = false;
+        this.jiraErrorMessage = error.message;
+      }
+    });
+  }
+
   isSlackChannelSelected(channelId: string): boolean {
     return this.selectedSlackChannelIds.includes(channelId);
   }
@@ -182,6 +256,14 @@ export class WorkspaceIntegrationsComponent implements OnInit {
       this.accountName = response.accountName ?? '';
       this.accountHandle = response.accountHandle ?? '';
       this.githubLastSyncAt = response.lastSyncAt;
+    });
+  }
+
+  private loadJira(): void {
+    this.integrationService.getJiraProjects(this.workspaceId).subscribe(response => {
+      this.isJiraConnected = response.connected;
+      this.jiraResources = response.resources;
+      this.jiraLastSyncAt = response.lastSyncAt;
     });
   }
 }

@@ -1,4 +1,4 @@
-export type SignalSourceType = 'slack' | 'github' | 'email' | 'decision';
+export type SignalSourceType = 'slack' | 'github' | 'email' | 'decision' | 'jira';
 export type SignalStatus = 'unread' | 'read' | 'archived';
 
 export interface SignalMetadata {
@@ -10,6 +10,9 @@ export interface SignalMetadata {
   assignees?: string[];
   createdAt?: Date;
   updatedAt?: Date;
+  issueType?: string;
+  priority?: string;
+  projectKey?: string;
   [key: string]: unknown;
 }
 
@@ -28,6 +31,6 @@ export interface Signal {
 }
 
 export interface SignalFilters {
-  source: 'all' | 'github' | 'slack' | 'decision';
+  source: 'all' | 'github' | 'slack' | 'decision' | 'jira';
   status: 'all' | SignalStatus;
 }

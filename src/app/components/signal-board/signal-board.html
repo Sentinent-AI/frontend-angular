@@ -16,6 +16,8 @@
     <div class="signal-badges">
       <span class="badge neutral" *ngIf="signal.sourceType === 'github'">{{ signal.metadata.state }}</span>
       <span class="badge neutral" *ngIf="signal.sourceType === 'slack'">#{{ getSlackChannel(signal) }}</span>
+      <span class="badge neutral" *ngIf="signal.sourceType === 'jira'">{{ signal.metadata.issueType }}</span>
+      <span class="badge neutral" *ngIf="signal.sourceType === 'jira' && signal.metadata.priority">{{ signal.metadata.priority }}</span>
       <span class="badge" *ngFor="let label of signal.metadata.labels">{{ label }}</span>
     </div>
 
