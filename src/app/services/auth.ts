@@ -22,6 +22,12 @@ interface ResetTokenValidationResponse {
   email: string;
 }
 
+export interface SignupProfile {
+  fullName: string;
+  jobTitle?: string;
+  organization?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })

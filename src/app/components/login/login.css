@@ -334,12 +334,6 @@ h1 {
   text-decoration: none;
 }
 
-.subtle-copy {
-  margin: 0 0 6px;
-  color: var(--muted);
-  font-size: 13px;
-}
-
 .error-text,
 .global-error {
   margin: 0;

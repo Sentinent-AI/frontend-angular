@@ -37,6 +37,12 @@
   gap: 16px;
 }
 
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -56,16 +62,19 @@
   place-items: center;
 }
 
-.logout-btn {
+.logout-btn,
+.profile-btn {
   border: 1px solid rgba(255, 255, 255, 0.24);
   background: transparent;
   color: #f7f7f7;
   border-radius: 10px;
   padding: 9px 14px;
   cursor: pointer;
+  text-decoration: none;
 }
 
-.logout-btn:hover {
+.logout-btn:hover,
+.profile-btn:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 

@@ -1,0 +1,169 @@
+<section class="profile-shell" *ngIf="isLoading">
+  <article class="profile-card loading-card">
+    <p class="section-kicker">Loading</p>
+    <h2>Loading your profile...</h2>
+    <p class="bio-copy">We’re pulling your account details from Sentinent now.</p>
+  </article>
+</section>
+
+<section class="profile-shell" *ngIf="!isLoading && !profile">
+  <article class="profile-card loading-card">
+    <p class="section-kicker">Profile unavailable</p>
+    <h2>We couldn’t load this profile yet.</h2>
+    <p class="bio-copy">{{ errorMessage || 'Try refreshing after the backend is running with the new profile API.' }}</p>
+    <div class="hero-actions">
+      <button type="button" class="primary-btn" (click)="retryLoadingProfile()">Try again</button>
+      <a routerLink="/dashboard" class="secondary-btn">Back to dashboard</a>
+    </div>
+  </article>
+</section>
+
+<section class="profile-shell" *ngIf="!isLoading && profile">
+  <header class="profile-hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Account Profile</p>
+      <h1>{{ displayName() }}</h1>
+      <p class="intro">Keep your identity and workspace context accurate so teammates know who is behind each signal, decision, and integration.</p>
+      <div class="hero-meta">
+        <span>{{ withFallback(profile.roleLabel, 'Role not set') }}</span>
+        <span>{{ withFallback(profile.organization, 'Organization not set') }}</span>
+        <span>{{ withFallback(profile.timezone, 'Timezone not set') }}</span>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <a routerLink="/dashboard" class="secondary-btn">Back to dashboard</a>
+      <button *ngIf="!isEditing" type="button" class="primary-btn" (click)="startEditing()">Edit profile</button>
+      <button *ngIf="isEditing" type="button" class="secondary-btn" (click)="cancelEditing()">Cancel</button>
+    </div>
+  </header>
+
+  <p *ngIf="successMessage" class="feedback success">{{ successMessage }}</p>
+  <p *ngIf="errorMessage" class="feedback error">{{ errorMessage }}</p>
+
+  <section class="profile-layout">
+    <aside class="profile-sidebar">
+      <article class="profile-card summary-card">
+        <div class="avatar">{{ profileInitial() }}</div>
+        <div class="summary-copy">
+          <h2>{{ displayName() }}</h2>
+          <p>{{ withFallback(profile.jobTitle, 'Job title not set') }}</p>
+          <small>{{ profile.email || 'Email not available' }}</small>
+        </div>
+      </article>
+
+      <article class="profile-card compact-card">
+        <h3>Account snapshot</h3>
+        <div class="snapshot-list">
+          <div class="snapshot-row">
+            <span>Role</span>
+            <strong>{{ withFallback(profile.roleLabel, 'Role not set') }}</strong>
+          </div>
+          <div class="snapshot-row">
+            <span>Team</span>
+            <strong>{{ withFallback(profile.organization, 'Organization not set') }}</strong>
+          </div>
+          <div class="snapshot-row">
+            <span>Timezone</span>
+            <strong>{{ withFallback(profile.timezone, 'Timezone not set') }}</strong>
+          </div>
+        </div>
+      </article>
+    </aside>
+
+    <div class="profile-main">
+      <article class="profile-card section-card" *ngIf="!isEditing">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Identity</p>
+            <h3>Profile details</h3>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-tile">
+            <span>Full name</span>
+            <strong>{{ displayName() }}</strong>
+          </div>
+          <div class="detail-tile">
+            <span>Email</span>
+            <strong>{{ profile.email || 'Not provided yet' }}</strong>
+          </div>
+          <div class="detail-tile">
+            <span>Job title</span>
+            <strong>{{ withFallback(profile.jobTitle, 'Not provided yet') }}</strong>
+          </div>
+          <div class="detail-tile">
+            <span>Organization or team</span>
+            <strong>{{ withFallback(profile.organization, 'Not provided yet') }}</strong>
+          </div>
+          <div class="detail-tile">
+            <span>Timezone</span>
+            <strong>{{ withFallback(profile.timezone, 'Not provided yet') }}</strong>
+          </div>
+          <div class="detail-tile">
+            <span>Role label</span>
+            <strong>{{ withFallback(profile.roleLabel, 'Not provided yet') }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="profile-card section-card" *ngIf="isEditing">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Edit mode</p>
+            <h3>Update your profile</h3>
+          </div>
+        </div>
+
+        <form class="edit-form" (ngSubmit)="saveProfile()">
+          <div class="edit-grid">
+            <div class="field-group">
+              <label class="field-label" for="fullName">Full Name</label>
+              <input id="fullName" name="fullName" class="field-input" type="text" [(ngModel)]="draft.fullName" />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="jobTitle">Job Title</label>
+              <input id="jobTitle" name="jobTitle" class="field-input" type="text" [(ngModel)]="draft.jobTitle" />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="organization">Organization or Team</label>
+              <input id="organization" name="organization" class="field-input" type="text" [(ngModel)]="draft.organization" />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="timezone">Timezone</label>
+              <input id="timezone" name="timezone" class="field-input" type="text" [(ngModel)]="draft.timezone" />
+            </div>
+
+            <div class="field-group field-group-wide">
+              <label class="field-label" for="roleLabel">Role Label</label>
+              <input id="roleLabel" name="roleLabel" class="field-input" type="text" [(ngModel)]="draft.roleLabel" />
+            </div>
+
+            <div class="field-group field-group-wide">
+              <label class="field-label" for="bio">Short Bio</label>
+              <textarea id="bio" name="bio" class="field-input field-area" [(ngModel)]="draft.bio"></textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-btn" [disabled]="isSaving">{{ isSaving ? 'Saving...' : 'Save changes' }}</button>
+          </div>
+        </form>
+      </article>
+
+      <article class="profile-card section-card">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">About</p>
+            <h3>Personal summary</h3>
+          </div>
+        </div>
+        <p class="bio-copy">{{ withFallback(profile.bio, 'Add a short bio to help teammates understand your role.') }}</p>
+      </article>
+    </div>
+  </section>
+</section>
