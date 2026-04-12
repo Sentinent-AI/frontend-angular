@@ -7,8 +7,6 @@
   --muted: rgba(10, 10, 10, 0.6);
   --error: #dc2626;
   --success: #16a34a;
-  --font-sans: Inter, sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
 }
 
 :host-context(.dark) {
