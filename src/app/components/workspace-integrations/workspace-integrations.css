@@ -79,6 +79,11 @@
   color: #9d174d;
 }
 
+.provider-badge.jira-badge {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
 .card-actions,
 .section-head {
   display: flex;
@@ -108,6 +113,11 @@
 .slack-btn {
   border-color: #7c3aed;
   background: #7c3aed;
+}
+
+.jira-btn {
+  border-color: #2563eb;
+  background: #2563eb;
 }
 
 .secondary-btn {

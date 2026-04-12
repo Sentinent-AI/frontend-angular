@@ -19,7 +19,11 @@ describe('WorkspaceIntegrationsComponent', () => {
       'connectGitHub',
       'updateGitHubRepos',
       'disconnectGitHub',
-      'syncGitHub'
+      'syncGitHub',
+      'getJiraProjects',
+      'connectJira',
+      'disconnectJira',
+      'syncJira'
     ]);
 
     mockIntegrationService.getSlackChannels.and.returnValue(of({
@@ -48,6 +52,15 @@ describe('WorkspaceIntegrationsComponent', () => {
     mockIntegrationService.syncGitHub.and.returnValue(of({ syncId: 'sync-1', status: 'in_progress' }));
     mockIntegrationService.disconnectGitHub.and.returnValue(of(void 0));
     mockIntegrationService.connectGitHub.and.returnValue(of(void 0));
+
+    mockIntegrationService.getJiraProjects.and.returnValue(of({
+      connected: false,
+      resources: [],
+      lastSyncAt: undefined
+    }));
+    mockIntegrationService.connectJira.and.returnValue(of(void 0));
+    mockIntegrationService.disconnectJira.and.returnValue(of(void 0));
+    mockIntegrationService.syncJira.and.returnValue(of({ status: 'in_progress' }));
 
     await TestBed.configureTestingModule({
       imports: [WorkspaceIntegrationsComponent],

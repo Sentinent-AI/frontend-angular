@@ -51,6 +51,10 @@
   background: #111827;
 }
 
+.signal-source.jira {
+  background: #2563eb;
+}
+
 .signal-card h3 {
   margin: 0;
   font-size: 1.05rem;
