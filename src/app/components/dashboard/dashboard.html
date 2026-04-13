@@ -32,6 +32,8 @@
       <h2>Your Workspaces</h2>
       <a routerLink="/workspace/create" class="create-btn">Create Workspace</a>
     </div>
+    <p *ngIf="deleteWorkspaceSuccess" class="workspace-feedback success">{{ deleteWorkspaceSuccess }}</p>
+    <p *ngIf="deleteWorkspaceError && pendingDeleteWorkspace === null" class="workspace-feedback error">{{ deleteWorkspaceError }}</p>
 
     <div class="workspace-list" *ngIf="workspaces.length > 0; else empty">
       <article *ngFor="let ws of workspaces" class="workspace-card">
@@ -40,8 +42,15 @@
         <small>Created: {{ ws.createdDate | date: 'mediumDate' }}</small>
         <div class="card-actions">
           <a [routerLink]="['/workspaces', ws.id, 'decisions']" class="action-btn open-btn">Open</a>
-          <a *ngIf="canEditWorkspace(ws)" [routerLink]="['/workspaces', ws.id, 'edit']" class="action-btn edit-btn">Edit</a>
-          <button type="button" class="action-btn delete-btn" (click)="deleteWorkspace(ws)">Delete</button>
+          <a [routerLink]="['/workspaces', ws.id, 'edit']" class="action-btn edit-btn">Edit</a>
+          <button
+            type="button"
+            class="action-btn delete-btn"
+            (click)="requestDeleteWorkspace(ws)"
+            [disabled]="isDeletingWorkspace && isWorkspacePendingDelete(ws)"
+          >
+            {{ isDeletingWorkspace && isWorkspacePendingDelete(ws) ? 'Deleting...' : 'Delete' }}
+          </button>
         </div>
       </article>
     </div>
@@ -53,6 +62,25 @@
       </div>
     </ng-template>
   </section>
+
+  <div class="modal-backdrop" *ngIf="pendingDeleteWorkspace as workspace">
+    <section class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-workspace-title">
+      <p class="delete-modal-eyebrow">Delete Workspace</p>
+      <h3 id="delete-workspace-title">Delete "{{ workspace.name }}"?</h3>
+      <p class="delete-modal-copy">
+        This will remove the workspace and related data for your account. This action cannot be undone.
+      </p>
+
+      <p *ngIf="deleteWorkspaceError" class="delete-modal-error">{{ deleteWorkspaceError }}</p>
+
+      <div class="delete-modal-actions">
+        <button type="button" class="modal-btn cancel" (click)="cancelDeleteWorkspace()" [disabled]="isDeletingWorkspace">Cancel</button>
+        <button type="button" class="modal-btn confirm" (click)="confirmDeleteWorkspace()" [disabled]="isDeletingWorkspace">
+          {{ isDeletingWorkspace ? 'Deleting...' : 'Yes, Delete' }}
+        </button>
+      </div>
+    </section>
+  </div>
 
   <section class="content signals-section">
     <div class="section-header signals-header">

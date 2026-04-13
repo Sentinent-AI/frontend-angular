@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { WorkspaceService } from '../../services/workspace';
@@ -16,7 +16,7 @@ import { SearchBarComponent } from '../search-bar/search-bar';
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
-export class Dashboard implements OnInit {
+export class Dashboard implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private workspaceService = inject(WorkspaceService);
   private signalService = inject(SignalService);
@@ -29,11 +29,13 @@ export class Dashboard implements OnInit {
   filters: SignalFilters = { source: 'all', status: 'all' };
   githubBanner = '';
   slackBanner = '';
-  currentUserId: string | null = null;
+  pendingDeleteWorkspace: Workspace | null = null;
+  isDeletingWorkspace = false;
+  deleteWorkspaceError = '';
+  deleteWorkspaceSuccess = '';
+  private deleteNoticeTimeoutId?: ReturnType<typeof setTimeout>;
 
   ngOnInit() {
-    this.currentUserId = this.authService.getCurrentUserId();
-
     this.workspaceService.getWorkspaces().subscribe({
       next: ws => {
         this.workspaces = ws;
@@ -60,22 +62,57 @@ export class Dashboard implements OnInit {
     this.loadSignals();
   }
 
-  canEditWorkspace(workspace: Workspace): boolean {
-    return this.currentUserId !== null && workspace.ownerId === this.currentUserId;
+  ngOnDestroy(): void {
+    if (this.deleteNoticeTimeoutId !== undefined) {
+      clearTimeout(this.deleteNoticeTimeoutId);
+      this.deleteNoticeTimeoutId = undefined;
+    }
   }
 
-  deleteWorkspace(workspace: Workspace) {
-    const confirmed = window.confirm(`Delete workspace "${workspace.name}"?`);
-    if (!confirmed) {
+  requestDeleteWorkspace(workspace: Workspace): void {
+    if (this.isDeletingWorkspace) {
+      return;
+    }
+    this.pendingDeleteWorkspace = workspace;
+    this.deleteWorkspaceError = '';
+  }
+
+  cancelDeleteWorkspace(): void {
+    if (this.isDeletingWorkspace) {
+      return;
+    }
+    this.pendingDeleteWorkspace = null;
+    this.deleteWorkspaceError = '';
+  }
+
+  confirmDeleteWorkspace(): void {
+    const workspace = this.pendingDeleteWorkspace;
+    if (!workspace || this.isDeletingWorkspace) {
       return;
     }
 
-    this.workspaceService.deleteWorkspace(workspace.id).subscribe(deleted => {
-      if (!deleted) {
-        return;
+    this.isDeletingWorkspace = true;
+    this.deleteWorkspaceError = '';
+
+    this.workspaceService.deleteWorkspace(workspace.id).subscribe({
+      next: (deleted) => {
+        if (!deleted) {
+          this.isDeletingWorkspace = false;
+          this.deleteWorkspaceError = 'Unable to delete workspace. Please try again.';
+          return;
+        }
+
+        this.workspaces = this.workspaces.filter(ws => ws.id !== workspace.id);
+        this.pendingDeleteWorkspace = null;
+        this.isDeletingWorkspace = false;
+        this.showDeleteSuccess(`Workspace "${workspace.name}" deleted.`);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isDeletingWorkspace = false;
+        this.deleteWorkspaceError = 'Unable to delete workspace. Please try again.';
+        this.cdr.detectChanges();
       }
-      this.workspaces = this.workspaces.filter(ws => ws.id !== workspace.id);
-      this.cdr.detectChanges();
     });
   }
 
@@ -102,10 +139,24 @@ export class Dashboard implements OnInit {
     this.signalService.archive(signalId).subscribe(() => this.loadSignals());
   }
 
+  isWorkspacePendingDelete(workspace: Workspace): boolean {
+    return this.pendingDeleteWorkspace?.id === workspace.id;
+  }
+
   private loadSignals(): void {
     this.signalService.getSignals(this.filters).subscribe(signals => {
       this.signals = signals;
       this.cdr.detectChanges();
     });
+  }
+
+  private showDeleteSuccess(message: string): void {
+    this.deleteWorkspaceSuccess = message;
+    if (this.deleteNoticeTimeoutId !== undefined) {
+      clearTimeout(this.deleteNoticeTimeoutId);
+    }
+    this.deleteNoticeTimeoutId = setTimeout(() => {
+      this.deleteWorkspaceSuccess = '';
+    }, 2600);
   }
 }

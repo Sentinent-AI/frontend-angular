@@ -19,7 +19,8 @@ describe('Dashboard', () => {
         mockWorkspaceService = {
             getWorkspaces: jasmine.createSpy('getWorkspaces').and.returnValue(of([
                 { id: '1', name: 'Test Workspace', description: 'Test Desc', createdDate: new Date(), ownerId: 'u1' }
-            ]))
+            ])),
+            deleteWorkspace: jasmine.createSpy('deleteWorkspace').and.returnValue(of(true))
         };
 
         mockAuthService = {
@@ -92,7 +93,7 @@ describe('Dashboard', () => {
         expect(compiled.querySelector('.workspace-card h3')?.textContent).toContain('Test Workspace');
     });
 
-    it('should hide edit action for workspaces not owned by the current user', () => {
+    it('should show edit action for all workspace cards', () => {
         mockWorkspaceService.getWorkspaces.and.returnValue(of([
             { id: '1', name: 'Owned Workspace', description: 'Owned Desc', createdDate: new Date(), ownerId: 'u1' },
             { id: '2', name: 'Shared Workspace', description: 'Shared Desc', createdDate: new Date(), ownerId: 'u2' }
@@ -107,7 +108,7 @@ describe('Dashboard', () => {
         const sharedCard = cards.find(card => card.textContent?.includes('Shared Workspace'));
 
         expect(ownedCard?.textContent).toContain('Edit');
-        expect(sharedCard?.textContent).not.toContain('Edit');
+        expect(sharedCard?.textContent).toContain('Edit');
     });
 
     it('should call logout on button click', () => {
@@ -125,5 +126,30 @@ describe('Dashboard', () => {
         const compiled = fixture.nativeElement as HTMLElement;
         expect(compiled.textContent).toContain('Slack');
         expect(compiled.textContent).toContain('Test Slack Signal');
+    });
+
+    it('should render jira source filter', () => {
+        const compiled = fixture.nativeElement as HTMLElement;
+        expect(compiled.textContent).toContain('JIRA');
+    });
+
+    it('should open custom delete dialog from workspace card', () => {
+        const deleteButton = fixture.nativeElement.querySelector('.delete-btn') as HTMLButtonElement;
+        deleteButton.click();
+        fixture.detectChanges();
+
+        const dialog = fixture.nativeElement.querySelector('.delete-modal') as HTMLElement | null;
+        expect(dialog).not.toBeNull();
+        expect(dialog?.textContent).toContain('Delete "Test Workspace"?');
+    });
+
+    it('should delete workspace via custom dialog and remove it from list', () => {
+        component.requestDeleteWorkspace(component.workspaces[0]);
+        component.confirmDeleteWorkspace();
+        fixture.detectChanges();
+
+        expect(mockWorkspaceService.deleteWorkspace).toHaveBeenCalledWith('1');
+        expect(component.workspaces.length).toBe(0);
+        expect(component.pendingDeleteWorkspace).toBeNull();
     });
 });
