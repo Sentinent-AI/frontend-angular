@@ -1,23 +1,54 @@
-<div class="workspace-details-container" *ngIf="workspace$ | async as workspace; else loading">
-    <header>
-        <div class="header-top">
-            <a routerLink="/dashboard" class="back-btn">Back to Dashboard</a>
-        </div>
-        <h1>{{ workspace.name }}</h1>
-        <p>{{ workspace.description || 'No description yet.' }}</p>
-    </header>
-
-    <nav class="workspace-nav">
-        <a routerLink="decisions" routerLinkActive="active">Decisions</a>
-        <a [routerLink]="['/workspaces', workspace.id, 'settings', 'members']">Members</a>
-        <a [routerLink]="['/workspaces', workspace.id, 'settings', 'integrations']">Integrations</a>
-    </nav>
-
-    <div class="content-area">
-        <router-outlet></router-outlet>
+<div class="workspace-page" *ngIf="workspace$ | async as workspace; else loading">
+  <section class="workspace-hero">
+    <div class="hero-head">
+      <a routerLink="/dashboard" class="back-btn">Back to Dashboard</a>
+      <div class="hero-actions">
+        <a [routerLink]="['/workspaces', workspace.id, 'edit']" class="action-btn subtle">Edit Workspace</a>
+        <a [routerLink]="['/workspaces', workspace.id, 'decisions', 'new']" class="action-btn">New Decision</a>
+      </div>
     </div>
+
+    <div class="hero-grid">
+      <div class="workspace-main">
+        <div class="workspace-badge">{{ getWorkspaceInitials(workspace.name) }}</div>
+        <div>
+          <p class="eyebrow">Workspace</p>
+          <h1>{{ workspace.name }}</h1>
+          <p class="description">{{ workspace.description || 'No description yet. Add one to give this workspace stronger context.' }}</p>
+        </div>
+      </div>
+
+      <div class="workspace-metrics">
+        <div class="metric-card">
+          <span class="metric-label">Health</span>
+          <strong class="metric-value">{{ getWorkspaceHealth(workspace.description || '') }}</strong>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Created</span>
+          <strong class="metric-value">{{ workspace.createdDate | date:'mediumDate' }}</strong>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Owner</span>
+          <strong class="metric-value">User #{{ workspace.ownerId }}</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="workspace-nav">
+    <a routerLink="decisions" routerLinkActive="active">Decisions</a>
+    <a [routerLink]="['/workspaces', workspace.id, 'settings', 'members']">Members</a>
+    <a [routerLink]="['/workspaces', workspace.id, 'settings', 'integrations']">Integrations</a>
+  </nav>
+
+  <section class="content-shell">
+    <router-outlet></router-outlet>
+  </section>
 </div>
 
 <ng-template #loading>
-    <div class="loading">Loading workspace...</div>
+  <div class="loading">
+    <div class="spinner" aria-hidden="true"></div>
+    <span>Loading workspace...</span>
+  </div>
 </ng-template>

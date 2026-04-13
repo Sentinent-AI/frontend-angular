@@ -28,4 +28,23 @@ export class WorkspaceDetailsComponent implements OnInit {
       }
     });
   }
+
+  getWorkspaceInitials(name: string): string {
+    return name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(part => part.charAt(0).toUpperCase())
+      .join('') || 'WS';
+  }
+
+  getWorkspaceHealth(description: string): string {
+    if (description.trim().length >= 20) {
+      return 'Configured';
+    }
+    if (description.trim().length > 0) {
+      return 'In Progress';
+    }
+    return 'Needs Detail';
+  }
 }
