@@ -12,11 +12,12 @@
     <a routerLink="/dashboard" class="back-nav-btn">Back to Dashboard</a>
   </header>
 
-  <main class="form-wrapper">
-    <div class="form-card">
+  <main class="workspace-shell">
+    <section class="form-card">
       <div class="form-header">
-        <h2>Edit Workspace</h2>
-        <p>Update the details of your workspace below.</p>
+        <p class="eyebrow">Workspace Update</p>
+        <h1>Edit Workspace</h1>
+        <p class="header-copy">Refine workspace details to keep your team context clear and aligned.</p>
       </div>
 
       <div *ngIf="isLoading" class="loading-state">
@@ -24,42 +25,131 @@
         <span>Loading workspace...</span>
       </div>
 
-      <form *ngIf="!isLoading && hasWorkspace" (ngSubmit)="onSubmit()" #workspaceForm="ngForm" novalidate>
+      <div *ngIf="!isLoading && hasWorkspace" class="progress-block" [attr.aria-label]="'Workspace update progress: ' + completionPercent + '%'">
+        <div class="progress-meta">
+          <span>Readiness</span>
+          <span>{{ completionPercent }}%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" [style.width.%]="completionPercent"></div>
+        </div>
+      </div>
+
+      <form *ngIf="!isLoading && hasWorkspace" class="workspace-form" (ngSubmit)="onSubmit()" #workspaceForm="ngForm" novalidate>
         <div class="form-group">
-          <label for="workspace-name">Workspace Name</label>
+          <div class="label-row">
+            <label for="workspace-name">Workspace Name</label>
+            <span class="counter">{{ name.trim().length }}/{{ nameMaxLength }}</span>
+          </div>
           <input
             id="workspace-name"
             name="workspaceName"
             type="text"
             required
+            [maxlength]="nameMaxLength"
             [(ngModel)]="name"
             [disabled]="isSubmitting"
             placeholder="e.g. Product Team"
             class="premium-input"
+            [class.active]="activeField === 'name'"
+            (focus)="activeField = 'name'"
+            (blur)="activeField = ''"
           />
+          <div class="chip-row">
+            <button
+              *ngFor="let suggestion of nameSuggestions"
+              type="button"
+              class="chip"
+              [disabled]="isSubmitting"
+              (click)="applyNameSuggestion(suggestion)"
+            >
+              {{ suggestion }}
+            </button>
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="workspace-description">Description</label>
+          <div class="label-row">
+            <label for="workspace-description">Description</label>
+            <span class="counter">{{ description.trim().length }}/{{ descriptionMaxLength }}</span>
+          </div>
           <textarea
             id="workspace-description"
             name="workspaceDescription"
+            [maxlength]="descriptionMaxLength"
             [(ngModel)]="description"
             [disabled]="isSubmitting"
-            rows="4"
-            placeholder="Describe this workspace"
+            rows="5"
+            placeholder="Describe this workspace in one clear sentence."
             class="premium-input"
+            [class.active]="activeField === 'description'"
+            (focus)="activeField = 'description'"
+            (blur)="activeField = ''"
           ></textarea>
+          <div class="chip-row">
+            <button
+              *ngFor="let suggestion of descriptionSuggestions"
+              type="button"
+              class="chip chip-wide"
+              [disabled]="isSubmitting"
+              (click)="applyDescriptionSuggestion(suggestion)"
+            >
+              {{ suggestion }}
+            </button>
+          </div>
         </div>
 
         <div class="form-actions">
           <button type="submit" [disabled]="isSubmitting || !workspaceForm.form.valid" class="premium-btn">
-            {{ isSubmitting ? 'Updating...' : 'Save Changes' }}
+            <span>{{ isSubmitting ? 'Updating...' : 'Save Changes' }}</span>
+            <span aria-hidden="true">→</span>
           </button>
         </div>
       </form>
 
-      <p *ngIf="error" class="error-msg">{{ error }}</p>
-    </div>
+      <div *ngIf="error" class="error-state">
+        <p class="error-msg">{{ error }}</p>
+        <button
+          *ngIf="!isLoading && !hasWorkspace && workspaceId"
+          type="button"
+          class="retry-btn"
+          (click)="retryLoad()"
+        >
+          Retry
+        </button>
+      </div>
+    </section>
+
+    <aside class="preview-panel" *ngIf="!isLoading && hasWorkspace">
+      <p class="preview-eyebrow">Live Preview</p>
+      <h2>{{ trimmedName || 'Workspace Name' }}</h2>
+      <p class="preview-description">
+        {{ trimmedDescription || 'Add a short description to help your team understand this workspace.' }}
+      </p>
+
+      <div class="preview-stats">
+        <div class="stat-tile">
+          <span class="stat-label">Readiness</span>
+          <strong class="stat-value">{{ completionPercent }}%</strong>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Name</span>
+          <strong class="stat-value">{{ trimmedName ? 'Set' : 'Pending' }}</strong>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Description</span>
+          <strong class="stat-value">{{ trimmedDescription ? 'Set' : 'Optional' }}</strong>
+        </div>
+      </div>
+
+      <div class="preview-stream">
+        <p class="stream-title">What improves after this update</p>
+        <ul>
+          <li>Clearer ownership and team context</li>
+          <li>More readable dashboard workspace listings</li>
+          <li>Better signal organization for collaborators</li>
+        </ul>
+      </div>
+    </aside>
   </main>
 </div>

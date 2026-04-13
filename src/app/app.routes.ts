@@ -61,7 +61,8 @@ export const routes: Routes = [
       },
       {
         path: 'decisions/:decisionId/edit',
-        loadComponent: () => import('./components/decision-form/decision-form.component').then(m => m.DecisionFormComponent)
+        redirectTo: 'decisions',
+        pathMatch: 'full'
       },
       { path: '', redirectTo: 'decisions', pathMatch: 'full' }
     ]

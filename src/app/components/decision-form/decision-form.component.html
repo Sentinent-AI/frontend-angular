@@ -1,44 +1,151 @@
-<div class="form-container">
-    <div class="form-header">
-        <h2>{{ isEditMode ? 'Edit Decision' : 'Create New Decision' }}</h2>
-        <a routerLink="/dashboard" class="btn-ghost">Back to Dashboard</a>
-    </div>
+<div class="decision-shell">
+    <section class="decision-card">
+        <div class="decision-header">
+            <p class="eyebrow">Decision Flow</p>
+            <div class="header-row">
+                <h2>{{ isEditMode ? 'Edit Decision' : 'Create Decision' }}</h2>
+                <a [routerLink]="workspaceId ? ['/workspaces', workspaceId, 'decisions'] : ['/dashboard']" class="btn-ghost">Back</a>
+            </div>
+            <p class="header-copy">Capture clear rationale, status, and timing so your team can act quickly.</p>
+        </div>
 
-    <form [formGroup]="decisionForm" (ngSubmit)="onSubmit()">
-        <div class="form-group">
-            <label for="title">Title *</label>
-            <input type="text" id="title" formControlName="title" class="form-control"
-                [ngClass]="{'is-invalid': decisionForm.get('title')?.invalid && decisionForm.get('title')?.touched}">
-            <div *ngIf="decisionForm.get('title')?.invalid && decisionForm.get('title')?.touched"
-                class="invalid-feedback">
-                Title is required.
+        <div *ngIf="isLoading" class="loading-state">
+            <div class="spinner" aria-hidden="true"></div>
+            <span>Loading decision...</span>
+        </div>
+
+        <div *ngIf="!isLoading" class="progress-block">
+            <div class="progress-meta">
+                <span>Decision Readiness</span>
+                <span>{{ completionPercent }}%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" [style.width.%]="completionPercent"></div>
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="description">Description</label>
-            <textarea id="description" formControlName="description" class="form-control" rows="4"></textarea>
+        <form *ngIf="!isLoading" [formGroup]="decisionForm" (ngSubmit)="onSubmit()" class="decision-form">
+            <div class="form-group">
+                <div class="label-row">
+                    <label for="title">Title *</label>
+                    <span class="counter">{{ titleLength }}/{{ titleMaxLength }}</span>
+                </div>
+                <input
+                    type="text"
+                    id="title"
+                    formControlName="title"
+                    class="form-control"
+                    [attr.maxlength]="titleMaxLength"
+                    [class.active]="activeField === 'title'"
+                    [ngClass]="{'is-invalid': decisionForm.get('title')?.invalid && decisionForm.get('title')?.touched}"
+                    placeholder="e.g. Finalize release communication timeline"
+                    (focus)="activeField = 'title'"
+                    (blur)="activeField = ''"
+                >
+                <div class="chip-row">
+                    <button *ngFor="let title of titleSuggestions" type="button" class="chip" [disabled]="isSubmitting" (click)="applyTitleSuggestion(title)">
+                        {{ title }}
+                    </button>
+                </div>
+                <div *ngIf="decisionForm.get('title')?.invalid && decisionForm.get('title')?.touched" class="invalid-feedback">
+                    Title is required.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="label-row">
+                    <label for="description">Description</label>
+                    <span class="counter">{{ descriptionLength }}/{{ descriptionMaxLength }}</span>
+                </div>
+                <textarea
+                    id="description"
+                    formControlName="description"
+                    class="form-control"
+                    rows="5"
+                    [attr.maxlength]="descriptionMaxLength"
+                    [class.active]="activeField === 'description'"
+                    placeholder="Why is this decision needed, and what outcome are we aiming for?"
+                    (focus)="activeField = 'description'"
+                    (blur)="activeField = ''"
+                ></textarea>
+                <div class="chip-row">
+                    <button *ngFor="let description of descriptionSuggestions" type="button" class="chip chip-wide" [disabled]="isSubmitting" (click)="applyDescriptionSuggestion(description)">
+                        {{ description }}
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Status</label>
+                <div class="status-row">
+                    <button
+                        *ngFor="let option of statusOptions"
+                        type="button"
+                        class="status-chip"
+                        [class.active]="selectedStatus === option.value"
+                        [disabled]="isSubmitting"
+                        (click)="selectStatus(option.value)"
+                    >
+                        <span>{{ option.label }}</span>
+                        <small>{{ option.hint }}</small>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="dueDate">Due Date (Optional)</label>
+                <input
+                    type="date"
+                    id="dueDate"
+                    formControlName="dueDate"
+                    class="form-control"
+                    [class.active]="activeField === 'dueDate'"
+                    (focus)="activeField = 'dueDate'"
+                    (blur)="activeField = ''"
+                >
+            </div>
+
+            <p *ngIf="submitError" class="error-msg">{{ submitError }}</p>
+
+            <div class="form-actions">
+                <a [routerLink]="workspaceId ? ['/workspaces', workspaceId, 'decisions'] : ['/dashboard']" class="btn-secondary">Cancel</a>
+                <button type="submit" [disabled]="decisionForm.invalid || isSubmitting" class="btn-primary">
+                    <span>{{ isSubmitting ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Create Decision') }}</span>
+                    <span aria-hidden="true">→</span>
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <aside class="preview-panel" *ngIf="!isLoading">
+        <p class="preview-eyebrow">Live Preview</p>
+        <h3>{{ trimmedTitle || 'Decision title appears here' }}</h3>
+        <p class="preview-description">
+            {{ trimmedDescription || 'Add context and rationale so everyone understands the decision intent.' }}
+        </p>
+
+        <div class="preview-stats">
+            <div class="stat-tile">
+                <span class="stat-label">Mode</span>
+                <strong class="stat-value">{{ isEditMode ? 'Update' : 'Create' }}</strong>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Status</span>
+                <strong class="stat-value">{{ selectedStatus }}</strong>
+            </div>
+            <div class="stat-tile">
+                <span class="stat-label">Due</span>
+                <strong class="stat-value">{{ dueDateText }}</strong>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label for="status">Status</label>
-            <select id="status" formControlName="status" class="form-control">
-                <option value="DRAFT">Draft</option>
-                <option value="OPEN">Open</option>
-                <option value="CLOSED">Closed</option>
-            </select>
+        <div class="preview-stream">
+            <p class="stream-title">Decision Checklist</p>
+            <ul>
+                <li [class.complete]="trimmedTitle.length > 0">Clear title for fast scanning</li>
+                <li [class.complete]="trimmedDescription.length >= 20">Enough context for reviewers</li>
+                <li [class.complete]="selectedStatus !== 'DRAFT'">Status reflects current workflow</li>
+            </ul>
         </div>
-        
-        <div class="form-group">
-            <label for="dueDate">Due Date (Optional)</label>
-            <input type="date" id="dueDate" formControlName="dueDate" class="form-control">
-        </div>
-
-        <div class="form-actions">
-            <button type="button" routerLink="../" class="btn-secondary">Back</button>
-            <button type="submit" [disabled]="decisionForm.invalid || isLoading" class="btn-primary">
-                {{ isEditMode ? 'Update Decision' : 'Create Decision' }}
-            </button>
-        </div>
-    </form>
+    </aside>
 </div>
