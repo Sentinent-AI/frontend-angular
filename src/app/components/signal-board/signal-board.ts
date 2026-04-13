@@ -31,7 +31,7 @@ export class SignalBoardComponent {
 
   getSourceLabel(signal: Signal): string {
     if (signal.sourceType === 'slack') return 'Slack';
-    if (signal.sourceType === 'jira') return 'Jira';
+    if (signal.sourceType === 'jira') return 'JIRA';
     return 'GitHub';
   }
 
@@ -46,7 +46,7 @@ export class SignalBoardComponent {
       return `#${this.getSlackChannel(signal)} in Slack`;
     }
     if (signal.sourceType === 'jira') {
-      return `${signal.metadata.projectKey} in Jira`;
+      return `${signal.metadata.projectKey ?? signal.sourceId ?? 'JIRA'} in JIRA`;
     }
 
     return `${this.getTypeLabel(signal)} #${signal.metadata.number} in ${signal.metadata.repository}`;

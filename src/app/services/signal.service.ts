@@ -7,7 +7,7 @@ import { toError } from './http-error';
 interface SignalResponse {
   id: number;
   workspace_id?: number;
-  source_type: 'slack' | 'github';
+  source_type: 'slack' | 'github' | 'jira';
   source_id: string;
   external_id?: string;
   title: string;
@@ -21,6 +21,10 @@ interface SignalResponse {
     repository?: string;
     state?: 'open' | 'closed';
     labels?: string[];
+    issueType?: string;
+    priority?: string;
+    projectKey?: string;
+    assignees?: string[];
   };
   received_at?: string;
 }
