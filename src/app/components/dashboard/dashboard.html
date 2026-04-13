@@ -20,7 +20,7 @@
 
     <div class="hero-copy">
       <h1>Decision Workspace Dashboard</h1>
-      <p>Track active workspaces, Slack conversations, and GitHub work in one place with clean structure and minimal noise.</p>
+      <p>Track active workspaces, Slack conversations, GitHub updates, and JIRA work in one place with clean structure and minimal noise.</p>
     </div>
   </section>
 
@@ -64,11 +64,12 @@
         <button type="button" class="filter-pill" [class.active]="filters.source === 'all'" (click)="setSourceFilter('all')">All</button>
         <button type="button" class="filter-pill" [class.active]="filters.source === 'slack'" (click)="setSourceFilter('slack')">Slack</button>
         <button type="button" class="filter-pill" [class.active]="filters.source === 'github'" (click)="setSourceFilter('github')">GitHub</button>
+        <button type="button" class="filter-pill" [class.active]="filters.source === 'jira'" (click)="setSourceFilter('jira')">JIRA</button>
         <button type="button" class="filter-pill" [class.active]="filters.status === 'all'" (click)="setStatusFilter('all')">All statuses</button>
         <button type="button" class="filter-pill" [class.active]="filters.status === 'unread'" (click)="setStatusFilter('unread')">Unread</button>
       </div>
     </div>
-    <p class="section-copy">Slack messages and GitHub updates appear here as action-ready signals.</p>
+    <p class="section-copy">Slack messages, GitHub updates, and JIRA work appear here as action-ready signals.</p>
 
     <app-signal-board
       *ngIf="signals.length; else noSignals"
@@ -80,7 +81,7 @@
     <ng-template #noSignals>
       <div class="empty-state">
         <h3>No matching signals</h3>
-        <p>Connect Slack or GitHub in workspace integrations to start pulling messages and assigned work into Sentinent.</p>
+        <p>Connect Slack, GitHub, or JIRA in workspace integrations to start pulling messages and assigned work into Sentinent.</p>
       </div>
     </ng-template>
   </section>
