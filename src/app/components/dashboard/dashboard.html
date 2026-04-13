@@ -20,7 +20,7 @@
 
     <div class="hero-copy">
       <h1>Decision Workspace Dashboard</h1>
-      <p>Track active workspaces, Slack conversations, and GitHub work in one place with clean structure and minimal noise.</p>
+      <p>Track active workspaces, Slack conversations, GitHub updates, and JIRA work in one place with clean structure and minimal noise.</p>
     </div>
   </section>
 
@@ -32,6 +32,8 @@
       <h2>Your Workspaces</h2>
       <a routerLink="/workspace/create" class="create-btn">Create Workspace</a>
     </div>
+    <p *ngIf="deleteWorkspaceSuccess" class="workspace-feedback success">{{ deleteWorkspaceSuccess }}</p>
+    <p *ngIf="deleteWorkspaceError && pendingDeleteWorkspace === null" class="workspace-feedback error">{{ deleteWorkspaceError }}</p>
 
     <div class="workspace-list" *ngIf="workspaces.length > 0; else empty">
       <article *ngFor="let ws of workspaces" class="workspace-card">
@@ -40,8 +42,15 @@
         <small>Created: {{ ws.createdDate | date: 'mediumDate' }}</small>
         <div class="card-actions">
           <a [routerLink]="['/workspaces', ws.id, 'decisions']" class="action-btn open-btn">Open</a>
-          <a *ngIf="canEditWorkspace(ws)" [routerLink]="['/workspaces', ws.id, 'edit']" class="action-btn edit-btn">Edit</a>
-          <button type="button" class="action-btn delete-btn" (click)="deleteWorkspace(ws)">Delete</button>
+          <a [routerLink]="['/workspaces', ws.id, 'edit']" class="action-btn edit-btn">Edit</a>
+          <button
+            type="button"
+            class="action-btn delete-btn"
+            (click)="requestDeleteWorkspace(ws)"
+            [disabled]="isDeletingWorkspace && isWorkspacePendingDelete(ws)"
+          >
+            {{ isDeletingWorkspace && isWorkspacePendingDelete(ws) ? 'Deleting...' : 'Delete' }}
+          </button>
         </div>
       </article>
     </div>
@@ -54,6 +63,25 @@
     </ng-template>
   </section>
 
+  <div class="modal-backdrop" *ngIf="pendingDeleteWorkspace as workspace">
+    <section class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-workspace-title">
+      <p class="delete-modal-eyebrow">Delete Workspace</p>
+      <h3 id="delete-workspace-title">Delete "{{ workspace.name }}"?</h3>
+      <p class="delete-modal-copy">
+        This will remove the workspace and related data for your account. This action cannot be undone.
+      </p>
+
+      <p *ngIf="deleteWorkspaceError" class="delete-modal-error">{{ deleteWorkspaceError }}</p>
+
+      <div class="delete-modal-actions">
+        <button type="button" class="modal-btn cancel" (click)="cancelDeleteWorkspace()" [disabled]="isDeletingWorkspace">Cancel</button>
+        <button type="button" class="modal-btn confirm" (click)="confirmDeleteWorkspace()" [disabled]="isDeletingWorkspace">
+          {{ isDeletingWorkspace ? 'Deleting...' : 'Yes, Delete' }}
+        </button>
+      </div>
+    </section>
+  </div>
+
   <section class="content signals-section">
     <div class="section-header signals-header">
       <div class="title-group">
@@ -64,11 +92,12 @@
         <button type="button" class="filter-pill" [class.active]="filters.source === 'all'" (click)="setSourceFilter('all')">All</button>
         <button type="button" class="filter-pill" [class.active]="filters.source === 'slack'" (click)="setSourceFilter('slack')">Slack</button>
         <button type="button" class="filter-pill" [class.active]="filters.source === 'github'" (click)="setSourceFilter('github')">GitHub</button>
+        <button type="button" class="filter-pill" [class.active]="filters.source === 'jira'" (click)="setSourceFilter('jira')">JIRA</button>
         <button type="button" class="filter-pill" [class.active]="filters.status === 'all'" (click)="setStatusFilter('all')">All statuses</button>
         <button type="button" class="filter-pill" [class.active]="filters.status === 'unread'" (click)="setStatusFilter('unread')">Unread</button>
       </div>
     </div>
-    <p class="section-copy">Slack messages and GitHub updates appear here as action-ready signals.</p>
+    <p class="section-copy">Slack messages, GitHub updates, and JIRA work appear here as action-ready signals.</p>
 
     <app-signal-board
       *ngIf="signals.length; else noSignals"
@@ -80,7 +109,7 @@
     <ng-template #noSignals>
       <div class="empty-state">
         <h3>No matching signals</h3>
-        <p>Connect Slack or GitHub in workspace integrations to start pulling messages and assigned work into Sentinent.</p>
+        <p>Connect Slack, GitHub, or JIRA in workspace integrations to start pulling messages and assigned work into Sentinent.</p>
       </div>
     </ng-template>
   </section>
