@@ -68,11 +68,12 @@
             [disabled]="member.role === 'owner'"
             [ngModel]="member.role"
             (ngModelChange)="updateMemberRole(member, $event)"
+            [attr.aria-label]="'Update role for ' + member.email"
           >
             <option *ngFor="let role of availableRoles" [value]="role">{{ role }}</option>
           </select>
 
-          <button type="button" class="secondary-btn" [disabled]="member.role === 'owner'" (click)="removeMember(member)">
+          <button type="button" class="secondary-btn" [disabled]="member.role === 'owner'" (click)="removeMember(member)" [attr.aria-label]="'Remove member ' + member.email">
             Remove
           </button>
         </div>
@@ -103,8 +104,8 @@
         </div>
 
         <div class="member-actions">
-          <button type="button" class="secondary-btn" (click)="resendInvitation(invitation)">Resend</button>
-          <button type="button" class="danger-btn" (click)="cancelInvitation(invitation)">Cancel</button>
+          <button type="button" class="secondary-btn" (click)="resendInvitation(invitation)" [attr.aria-label]="'Resend invitation to ' + invitation.email">Resend</button>
+          <button type="button" class="danger-btn" (click)="cancelInvitation(invitation)" [attr.aria-label]="'Cancel invitation for ' + invitation.email">Cancel</button>
         </div>
       </article>
     </div>

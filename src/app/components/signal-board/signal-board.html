@@ -29,9 +29,9 @@
     </div>
 
     <div class="signal-actions">
-      <a class="link-btn" *ngIf="signal.url" [href]="signal.url" target="_blank" rel="noreferrer">{{ getOpenLabel(signal) }}</a>
-      <button type="button" class="ghost-btn" (click)="markAsRead.emit(signal.id)">Mark as read</button>
-      <button type="button" class="ghost-btn" (click)="archive.emit(signal.id)">Archive</button>
+      <a class="link-btn" *ngIf="signal.url" [href]="signal.url" target="_blank" rel="noreferrer" [attr.aria-label]="getOpenLabel(signal) + ' for signal: ' + signal.title">{{ getOpenLabel(signal) }}</a>
+      <button type="button" class="ghost-btn" (click)="markAsRead.emit(signal.id)" [attr.aria-label]="'Mark signal as read: ' + signal.title">Mark as read</button>
+      <button type="button" class="ghost-btn" (click)="archive.emit(signal.id)" [attr.aria-label]="'Archive signal: ' + signal.title">Archive</button>
     </div>
   </article>
 </section>

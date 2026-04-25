@@ -41,13 +41,14 @@
         <p>{{ ws.description || 'No description yet.' }}</p>
         <small>Created: {{ ws.createdDate | date: 'mediumDate' }}</small>
         <div class="card-actions">
-          <a [routerLink]="['/workspaces', ws.id, 'decisions']" class="action-btn open-btn">Open</a>
-          <a [routerLink]="['/workspaces', ws.id, 'edit']" class="action-btn edit-btn">Edit</a>
+          <a [routerLink]="['/workspaces', ws.id, 'decisions']" class="action-btn open-btn" [attr.aria-label]="'Open workspace ' + ws.name">Open</a>
+          <a [routerLink]="['/workspaces', ws.id, 'edit']" class="action-btn edit-btn" [attr.aria-label]="'Edit workspace ' + ws.name">Edit</a>
           <button
             type="button"
             class="action-btn delete-btn"
             (click)="requestDeleteWorkspace(ws)"
             [disabled]="isDeletingWorkspace && isWorkspacePendingDelete(ws)"
+            [attr.aria-label]="'Delete workspace ' + ws.name"
           >
             {{ isDeletingWorkspace && isWorkspacePendingDelete(ws) ? 'Deleting...' : 'Delete' }}
           </button>
