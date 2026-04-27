@@ -120,7 +120,25 @@ export class SearchBarComponent implements OnInit, OnDestroy {
 
   highlightMatch(text: string): string {
     if (!this.query || !text) return text;
-    const regex = new RegExp(`(${this.query})`, 'gi');
-    return text.replace(regex, '<mark>$1</mark>');
+
+    // First escape HTML in the input text to prevent XSS
+    const escapedText = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+    // Also escape HTML and regex special characters in the query to match correctly
+    const escapedQuery = this.query
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    return escapedText.replace(regex, '<mark>$1</mark>');
   }
 }
