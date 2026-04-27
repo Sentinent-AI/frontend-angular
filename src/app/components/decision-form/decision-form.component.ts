@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { Subject, Subscription, takeUntil, timeout } from 'rxjs';
+import { finalize, Subject, Subscription, takeUntil, timeout } from 'rxjs';
 import { Decision } from '../../models/decision.model';
 import { DecisionService } from '../../services/decision.service';
 
@@ -251,10 +251,12 @@ export class DecisionFormComponent implements OnInit, OnDestroy {
         this.loadSubscription = this.decisionService.getDecision(this.workspaceId, id).pipe(
             timeout(this.requestTimeoutMs),
             takeUntil(this.destroy$),
+            finalize(() => {
+                this.isLoading = false;
+                this.clearLoadGuardTimer();
+            })
         ).subscribe({
             next: (decision) => {
-                this.clearActiveLoad();
-                this.isLoading = false;
                 if (!decision) {
                     this.submitError = 'Decision not found.';
                     return;
@@ -268,8 +270,6 @@ export class DecisionFormComponent implements OnInit, OnDestroy {
                 });
             },
             error: (error) => {
-                this.clearActiveLoad();
-                this.isLoading = false;
                 this.submitError = this.resolveSubmitError(error, 'Unable to load decision. Please try again.');
             }
         });
@@ -283,13 +283,17 @@ export class DecisionFormComponent implements OnInit, OnDestroy {
     }
 
     private resolveWorkspaceId(): string | null {
-        for (const route of this.route.pathFromRoot) {
-            const id = route.snapshot.paramMap.get('id');
+        // Try to get from route hierarchy first
+        let currentRoute: ActivatedRoute | null = this.route;
+        while (currentRoute) {
+            const id = currentRoute.snapshot.paramMap.get('id');
             if (id) {
                 return id;
             }
+            currentRoute = currentRoute.parent;
         }
 
+        // Fallback to URL parsing if route hierarchy fails
         const urlMatch = this.router.url.match(/\/workspaces\/([^/]+)/);
         if (urlMatch?.[1]) {
             return urlMatch[1];

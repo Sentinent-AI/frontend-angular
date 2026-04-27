@@ -21,9 +21,11 @@ export class WorkspaceDetailsComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    let currentId: string | null = null;
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
-      if (id) {
+      if (id && id !== currentId) {
+        currentId = id;
         this.workspace$ = this.workspaceService.getWorkspace(id);
       }
     });
