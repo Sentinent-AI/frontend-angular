@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { finalize, Subject, Subscription, takeUntil, timeout } from 'rxjs';
+import { distinctUntilChanged, finalize, map, Subject, Subscription, takeUntil, timeout } from 'rxjs';
 import { Decision } from '../../models/decision.model';
 import { DecisionService } from '../../services/decision.service';
 
@@ -51,7 +51,8 @@ export class DecisionFormComponent implements OnInit, OnDestroy {
         private readonly fb: FormBuilder,
         private readonly decisionService: DecisionService,
         private readonly route: ActivatedRoute,
-        private readonly router: Router
+        private readonly router: Router,
+        private readonly cdr: ChangeDetectorRef
     ) {
         this.decisionForm = this.fb.group({
             title: ['', [Validators.required, Validators.maxLength(this.titleMaxLength)]],
@@ -121,8 +122,11 @@ export class DecisionFormComponent implements OnInit, OnDestroy {
             this.submitError = 'Workspace context is missing. Please open this page from a workspace.';
         }
 
-        this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
-            const nextDecisionId = params.get('decisionId');
+        this.route.paramMap.pipe(
+            takeUntil(this.destroy$),
+            map(params => params.get('decisionId')),
+            distinctUntilChanged()
+        ).subscribe(nextDecisionId => {
             if (nextDecisionId) {
                 this.enterEditMode(nextDecisionId);
             } else {
@@ -246,6 +250,7 @@ export class DecisionFormComponent implements OnInit, OnDestroy {
         this.clearActiveLoad();
         this.isLoading = true;
         this.submitError = '';
+        this.cdr.detectChanges();
         this.startLoadGuardTimer();
 
         this.loadSubscription = this.decisionService.getDecision(this.workspaceId, id).pipe(
@@ -254,6 +259,7 @@ export class DecisionFormComponent implements OnInit, OnDestroy {
             finalize(() => {
                 this.isLoading = false;
                 this.clearLoadGuardTimer();
+                this.cdr.detectChanges();
             })
         ).subscribe({
             next: (decision) => {
