@@ -61,8 +61,8 @@ export const routes: Routes = [
       },
       {
         path: 'decisions/:decisionId/edit',
-        redirectTo: 'decisions',
-        pathMatch: 'full'
+        loadComponent: () => import('./components/decision-form/decision-form.component').then(m => m.DecisionFormComponent),
+        canActivate: [authGuard]
       },
       { path: '', redirectTo: 'decisions', pathMatch: 'full' }
     ]
