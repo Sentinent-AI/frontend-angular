@@ -7,6 +7,14 @@
         </div>
     </div>
 
+    <div *ngIf="error" class="error-banner">
+        {{ error }}
+    </div>
+
+    <div *ngIf="!(decisions$ | async) && !error" class="loading-state">
+        <span class="spinner"></span> Loading decisions...
+    </div>
+
     <div class="decision-list" *ngIf="decisions$ | async as decisions">
         <div *ngIf="decisions.length === 0" class="empty-state">
             No decisions found. Create one to get started!
