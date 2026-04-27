@@ -37,16 +37,6 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
-    path: 'workspaces/:id/settings/members',
-    component: WorkspaceMembersComponent,
-    canActivate: [authGuard]
-  },
-  {
-    path: 'workspaces/:id/settings/integrations',
-    component: WorkspaceIntegrationsComponent,
-    canActivate: [authGuard]
-  },
-  {
     path: 'workspaces/:id',
     loadComponent: () => import('./components/workspace/workspace-details/workspace-details').then(m => m.WorkspaceDetailsComponent),
     canActivate: [authGuard],
@@ -54,6 +44,16 @@ export const routes: Routes = [
       {
         path: 'decisions',
         loadComponent: () => import('./components/decision-list/decision-list.component').then(m => m.DecisionListComponent)
+      },
+      {
+        path: 'settings/members',
+        component: WorkspaceMembersComponent,
+        canActivate: [authGuard]
+      },
+      {
+        path: 'settings/integrations',
+        component: WorkspaceIntegrationsComponent,
+        canActivate: [authGuard]
       },
       {
         path: 'decisions/new',

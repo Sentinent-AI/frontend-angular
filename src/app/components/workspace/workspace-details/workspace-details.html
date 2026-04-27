@@ -37,8 +37,8 @@
 
   <nav class="workspace-nav">
     <a routerLink="decisions" routerLinkActive="active">Decisions</a>
-    <a [routerLink]="['/workspaces', workspace.id, 'settings', 'members']">Members</a>
-    <a [routerLink]="['/workspaces', workspace.id, 'settings', 'integrations']">Integrations</a>
+    <a routerLink="settings/members" routerLinkActive="active">Members</a>
+    <a routerLink="settings/integrations" routerLinkActive="active">Integrations</a>
   </nav>
 
   <section class="content-shell">
