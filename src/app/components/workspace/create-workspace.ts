@@ -88,8 +88,8 @@ export class CreateWorkspace {
           this.error = 'An error occurred while loading the dashboard.';
         });
       },
-      error: () => {
-        this.error = 'Unable to create workspace. Please try again.';
+      error: (err) => {
+        this.error = err.message || 'Unable to create workspace. Please try again.';
         this.isSubmitting = false;
       }
     });
