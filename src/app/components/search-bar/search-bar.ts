@@ -2,9 +2,8 @@ import { Component, OnInit, OnDestroy, ElementRef, ViewChild, HostListener, Chan
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { Subject, Subscription, of } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { Decision } from '../../models/decision.model';
-import { Signal } from '../../models/signal.model';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { SearchService, SearchResult } from '../../services/search.service';
 
