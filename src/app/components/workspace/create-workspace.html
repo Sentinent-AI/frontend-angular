@@ -96,8 +96,9 @@
 
         <div class="form-actions">
           <button type="submit" [disabled]="isSubmitting || !workspaceForm.form.valid" class="premium-btn">
+            <span *ngIf="isSubmitting" class="spinner" aria-hidden="true"></span>
             <span>{{ isSubmitting ? 'Creating...' : 'Create Workspace' }}</span>
-            <span aria-hidden="true">→</span>
+            <span *ngIf="!isSubmitting" aria-hidden="true">→</span>
           </button>
         </div>
       </form>
