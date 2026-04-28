@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { IntegrationService } from '../../services/integration.service';
 import { GitHubRepo, SyncStatus } from '../../models/github-integration.model';
 import { SlackChannel } from '../../models/slack-integration.model';
-import { AtlassianResource, JiraSyncStatus } from '../../models/jira-integration.model';
+import { JiraProject, JiraSyncStatus } from '../../models/jira-integration.model';
 
 @Component({
   selector: 'app-workspace-integrations',
@@ -41,7 +41,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   isSyncing = false;
 
   isJiraConnected = false;
-  jiraResources: AtlassianResource[] = [];
+  jiraProjects: JiraProject[] = [];
   jiraLastSyncAt?: Date;
   jiraSyncStatus?: JiraSyncStatus;
   jiraFeedbackMessage = '';
@@ -262,7 +262,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   private loadJira(): void {
     this.integrationService.getJiraProjects(this.workspaceId).subscribe(response => {
       this.isJiraConnected = response.connected;
-      this.jiraResources = response.resources;
+      this.jiraProjects = response.projects;
       this.jiraLastSyncAt = response.lastSyncAt;
     });
   }

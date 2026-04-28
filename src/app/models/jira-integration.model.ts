@@ -2,15 +2,10 @@ export interface JiraProject {
   id: string;
   key: string;
   name: string;
-  avatarUrl: string;
-}
-
-export interface AtlassianResource {
-  id: string;
-  url: string;
-  name: string;
-  scopes: string[];
-  avatarUrl: string;
+  avatarUrl?: string;
+  siteId: string;
+  siteName: string;
+  siteUrl: string;
 }
 
 export interface JiraSyncStatus {
@@ -21,6 +16,6 @@ export interface JiraSyncStatus {
 
 export interface JiraIntegrationResponse {
   connected: boolean;
-  resources: AtlassianResource[];
-  lastSyncAt?: string;
+  projects: JiraProject[];
+  lastSyncAt?: Date;
 }

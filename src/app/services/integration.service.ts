@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { GitHubConnectionState, GitHubRepo, SyncStatus } from '../models/github-integration.model';
+import { JiraIntegrationResponse, JiraProject, JiraSyncStatus } from '../models/jira-integration.model';
 import { SlackConnectionState } from '../models/slack-integration.model';
 import { toError } from './http-error';
 
@@ -34,6 +35,10 @@ interface OAuthResponse {
 }
 
 interface GitHubSyncResponse {
+  status: string;
+}
+
+interface JiraSyncResponse {
   status: string;
 }
 
@@ -198,22 +203,22 @@ export class IntegrationService {
     );
   }
 
-  getJiraProjects(workspaceId: string): Observable<any> {
+  getJiraProjects(workspaceId: string): Observable<JiraIntegrationResponse> {
     return this.getIntegrations(workspaceId).pipe(
       switchMap((integrations) => {
         const jiraIntegration = integrations.find((integration) => integration.provider === 'jira');
         if (!jiraIntegration) {
           return of({
             connected: false,
-            resources: [],
+            projects: [],
           });
         }
 
         const params = new HttpParams().set('workspace_id', workspaceId);
-        return this.http.get<any[]>(`${this.apiUrl}/jira/projects`, { params }).pipe(
-          map((resources) => ({
+        return this.http.get<JiraProject[]>(`${this.apiUrl}/jira/projects`, { params }).pipe(
+          map((projects) => ({
             connected: true,
-            resources: resources,
+            projects,
             lastSyncAt: jiraIntegration.updated_at ? new Date(jiraIntegration.updated_at) : undefined,
           })),
         );
@@ -229,13 +234,13 @@ export class IntegrationService {
     );
   }
 
-  syncJira(workspaceId: string): Observable<any> {
+  syncJira(workspaceId: string): Observable<JiraSyncStatus> {
     const params = new HttpParams().set('workspace_id', workspaceId);
-    return this.http.post<any>(`${this.apiUrl}/jira/sync`, {}, { params }).pipe(
+    return this.http.post<JiraSyncResponse>(`${this.apiUrl}/jira/sync`, {}, { params }).pipe(
       map((response) => {
         return {
           status: response.status === 'sync_started' ? 'in_progress' : 'failed',
-        };
+        } as JiraSyncStatus;
       }),
       catchError((error) => throwError(() => toError(error, 'Unable to sync Jira.'))),
     );

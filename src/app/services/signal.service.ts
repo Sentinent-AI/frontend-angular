@@ -22,9 +22,16 @@ interface SignalResponse {
     state?: 'open' | 'closed';
     labels?: string[];
     issueType?: string;
+    issue_type?: string;
     priority?: string;
     projectKey?: string;
+    project_key?: string;
+    issueKey?: string;
+    issue_key?: string;
+    assigneeName?: string;
+    assignee_name?: string;
     assignees?: string[];
+    status?: string;
   };
   received_at?: string;
 }
@@ -88,6 +95,19 @@ export class SignalService {
         channel: channelId,
         channelId,
         timestamp: signal.external_id ?? timestamp,
+      };
+    }
+
+    if (signal.source_type === 'jira') {
+      const metadata = signal.source_metadata ?? {};
+      return {
+        ...metadata,
+        issueType: metadata.issueType ?? metadata.issue_type,
+        projectKey: metadata.projectKey ?? metadata.project_key,
+        issueKey: metadata.issueKey ?? metadata.issue_key ?? signal.external_id,
+        assignees: metadata.assigneeName || metadata.assignee_name
+          ? [String(metadata.assigneeName ?? metadata.assignee_name)]
+          : [],
       };
     }
 

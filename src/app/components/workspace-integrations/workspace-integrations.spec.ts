@@ -55,7 +55,7 @@ describe('WorkspaceIntegrationsComponent', () => {
 
     mockIntegrationService.getJiraProjects.and.returnValue(of({
       connected: false,
-      resources: [],
+      projects: [],
       lastSyncAt: undefined
     }));
     mockIntegrationService.connectJira.and.returnValue(of(void 0));
