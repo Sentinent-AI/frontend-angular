@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { IntegrationService } from '../../services/integration.service';
 import { GitHubRepo, SyncStatus } from '../../models/github-integration.model';
 import { SlackChannel } from '../../models/slack-integration.model';
-import { AtlassianResource, JiraSyncStatus } from '../../models/jira-integration.model';
+import { JiraProject, JiraSyncStatus } from '../../models/jira-integration.model';
 
 @Component({
   selector: 'app-workspace-integrations',
@@ -41,7 +41,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   isSyncing = false;
 
   isJiraConnected = false;
-  jiraResources: AtlassianResource[] = [];
+  jiraProjects: JiraProject[] = [];
   jiraLastSyncAt?: Date;
   jiraSyncStatus?: JiraSyncStatus;
   jiraFeedbackMessage = '';
@@ -49,7 +49,25 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   isJiraSyncing = false;
 
   ngOnInit(): void {
-    this.workspaceId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.workspaceId = this.route.snapshot.paramMap.get('id') || 
+                       this.route.parent?.snapshot.paramMap.get('id') || '';
+    
+    // Check for OAuth redirect results
+    const queryParams = this.route.snapshot.queryParamMap;
+    const jiraStatus = queryParams.get('jira');
+    if (jiraStatus === 'connected') {
+      this.jiraFeedbackMessage = 'Jira connected successfully!';
+    } else if (jiraStatus === 'failed') {
+      this.jiraErrorMessage = 'Failed to connect Jira.';
+    }
+
+    const githubStatus = queryParams.get('github');
+    if (githubStatus === 'connected') {
+      this.githubFeedbackMessage = 'GitHub connected successfully!';
+    } else if (githubStatus === 'failed') {
+      this.githubErrorMessage = 'Failed to connect GitHub.';
+    }
+
     this.loadAllIntegrations();
     window.addEventListener('focus', this.onWindowFocus);
   }
@@ -80,6 +98,9 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
     this.slackErrorMessage = '';
     this.slackFeedbackMessage = 'Starting Slack connection...';
     this.integrationService.connectSlack(this.workspaceId).subscribe({
+      next: () => {
+        this.slackFeedbackMessage = '';
+      },
       error: (error: Error) => {
         this.slackErrorMessage = error.message;
         this.slackFeedbackMessage = '';
@@ -98,6 +119,9 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
     this.githubErrorMessage = '';
     this.githubFeedbackMessage = 'Starting GitHub connection...';
     this.integrationService.connectGitHub().subscribe({
+      next: () => {
+        this.githubFeedbackMessage = '';
+      },
       error: (error: Error) => {
         this.githubErrorMessage = error.message;
         this.githubFeedbackMessage = '';
@@ -117,6 +141,9 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
     this.jiraErrorMessage = '';
     this.jiraFeedbackMessage = 'Starting Jira connection...';
     this.integrationService.connectJira(this.workspaceId).subscribe({
+      next: () => {
+        this.jiraFeedbackMessage = '';
+      },
       error: (error: Error) => {
         this.jiraErrorMessage = error.message;
         this.jiraFeedbackMessage = '';
@@ -262,7 +289,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   private loadJira(): void {
     this.integrationService.getJiraProjects(this.workspaceId).subscribe(response => {
       this.isJiraConnected = response.connected;
-      this.jiraResources = response.resources;
+      this.jiraProjects = response.projects;
       this.jiraLastSyncAt = response.lastSyncAt;
     });
   }
