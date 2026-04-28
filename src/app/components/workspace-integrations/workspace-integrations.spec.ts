@@ -55,7 +55,7 @@ describe('WorkspaceIntegrationsComponent', () => {
 
     mockIntegrationService.getJiraProjects.and.returnValue(of({
       connected: false,
-      projects: [],
+      resources: [],
       lastSyncAt: undefined
     }));
     mockIntegrationService.connectJira.and.returnValue(of(void 0));
@@ -70,8 +70,7 @@ describe('WorkspaceIntegrationsComponent', () => {
           provide: ActivatedRoute,
           useValue: {
             snapshot: {
-              paramMap: convertToParamMap({ id: 'workspace-1' }),
-              queryParamMap: convertToParamMap({})
+              paramMap: convertToParamMap({ id: 'workspace-1' })
             }
           }
         }
