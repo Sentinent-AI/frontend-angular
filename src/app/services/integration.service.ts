@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
+import { catchError, map, Observable, of, switchMap, tap, throwError } from 'rxjs';
 import { GitHubConnectionState, GitHubRepo, SyncStatus } from '../models/github-integration.model';
 import { JiraIntegrationResponse, JiraProject, JiraSyncStatus } from '../models/jira-integration.model';
 import { SlackConnectionState } from '../models/slack-integration.model';
@@ -61,6 +61,7 @@ export class IntegrationService {
     return this.getSlackAuthUrl(workspaceId).pipe(
       map(({ authUrl }) => {
         window.open(authUrl, '_blank');
+        return;
       }),
     );
   }
@@ -130,6 +131,7 @@ export class IntegrationService {
     return this.getGitHubAuthUrl().pipe(
       map(({ authUrl }) => {
         window.open(authUrl, '_blank');
+        return;
       }),
     );
   }
@@ -187,18 +189,28 @@ export class IntegrationService {
     );
   }
 
-  getJiraAuthUrl(workspaceId: string): Observable<{ authUrl: string }> {
-    const params = new HttpParams().set('workspace_id', workspaceId);
+  getJiraAuthUrl(workspaceId: string, redirectUrl?: string): Observable<{ authUrl: string }> {
+    console.log('Fetching Jira Auth URL for workspace:', workspaceId);
+    let params = new HttpParams().set('workspace_id', workspaceId);
+    if (redirectUrl) {
+      params = params.set('redirect_url', redirectUrl);
+    }
     return this.http.get<OAuthResponse>(`${this.apiUrl}/jira/auth`, { params }).pipe(
+      tap(resp => console.log('Jira Auth URL response:', resp)),
       map((response) => ({ authUrl: response.auth_url })),
-      catchError((error) => throwError(() => toError(error, 'Unable to start Jira connection.'))),
+      catchError((error) => {
+        console.error('Jira Auth URL error:', error);
+        return throwError(() => toError(error, 'Unable to start Jira connection.'));
+      }),
     );
   }
 
   connectJira(workspaceId: string): Observable<void> {
-    return this.getJiraAuthUrl(workspaceId).pipe(
+    const redirectUrl = window.location.origin + window.location.pathname;
+    return this.getJiraAuthUrl(workspaceId, redirectUrl).pipe(
       map(({ authUrl }) => {
-        window.open(authUrl, '_blank');
+        window.location.href = authUrl;
+        return;
       }),
     );
   }
