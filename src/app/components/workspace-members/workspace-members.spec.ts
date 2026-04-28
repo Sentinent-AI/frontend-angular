@@ -58,7 +58,12 @@ describe('WorkspaceMembersComponent', () => {
           useValue: {
             snapshot: {
               paramMap: convertToParamMap({ id: '1' })
-            }
+            },
+            pathFromRoot: [{
+              snapshot: {
+                paramMap: convertToParamMap({ id: '1' })
+              }
+            }]
           }
         }
       ]

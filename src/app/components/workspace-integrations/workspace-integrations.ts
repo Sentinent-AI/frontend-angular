@@ -55,7 +55,8 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   }
 
   private getWorkspaceIdFromRoute(): string | null {
-    for (const route of this.route.pathFromRoot) {
+    const path = this.route.pathFromRoot || [];
+    for (const route of path) {
       const id = route.snapshot.paramMap.get('id');
       if (id) {
         return id;

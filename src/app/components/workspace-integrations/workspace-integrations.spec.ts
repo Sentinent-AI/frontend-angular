@@ -76,7 +76,12 @@ describe('WorkspaceIntegrationsComponent', () => {
           useValue: {
             snapshot: {
               paramMap: convertToParamMap({ id: 'workspace-1' })
-            }
+            },
+            pathFromRoot: [{
+              snapshot: {
+                paramMap: convertToParamMap({ id: 'workspace-1' })
+              }
+            }]
           }
         }
       ]
