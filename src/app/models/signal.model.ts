@@ -18,6 +18,7 @@ export interface SignalMetadata {
 
 export interface Signal {
   id: string;
+  workspaceId?: number;
   sourceType: SignalSourceType;
   sourceId: string;
   externalId: string;

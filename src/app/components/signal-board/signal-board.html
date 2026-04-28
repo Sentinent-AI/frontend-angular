@@ -5,9 +5,21 @@
         <span class="signal-source" [ngClass]="getSourceClass(signal)">{{ getSourceLabel(signal) }}</span>
         <h3>{{ signal.title }}</h3>
       </div>
-      <span class="signal-status" [class.unread]="signal.status === 'unread'">
-        {{ signal.status }}
-      </span>
+      <ng-container *ngIf="signal.sourceType === 'jira'; else defaultStatus">
+        <div class="status-container" (mouseenter)="loadJiraTransitions(signal)">
+          <select class="jira-status-select" 
+                  [disabled]="loadingTransitions[signal.id]"
+                  (change)="onJiraTransitionChange(signal, $event)">
+            <option value="" disabled selected>{{ signal.metadata['status'] || signal.status }}</option>
+            <option *ngFor="let t of activeJiraTransitions[signal.id]" [value]="t.id">{{ t.name }}</option>
+          </select>
+        </div>
+      </ng-container>
+      <ng-template #defaultStatus>
+        <span class="signal-status" [class.unread]="signal.status === 'unread'">
+          {{ signal.status }}
+        </span>
+      </ng-template>
     </div>
 
     <p class="signal-meta">{{ getPrimaryContext(signal) }}</p>
@@ -29,9 +41,20 @@
     </div>
 
     <div class="signal-actions">
-      <a class="link-btn" *ngIf="signal.url" [href]="signal.url" target="_blank" rel="noreferrer">{{ getOpenLabel(signal) }}</a>
-      <button type="button" class="ghost-btn" (click)="markAsRead.emit(signal.id)">Mark as read</button>
-      <button type="button" class="ghost-btn" (click)="archive.emit(signal.id)">Archive</button>
+      <div class="jira-comment-section" *ngIf="signal.sourceType === 'jira'">
+        <input type="text" placeholder="Add a comment..." [(ngModel)]="jiraComments[signal.id]" [disabled]="submittingComment[signal.id]">
+        <button type="button" class="ghost-btn" [disabled]="submittingComment[signal.id] || !jiraComments[signal.id]" (click)="addJiraComment(signal)">Comment</button>
+      </div>
+
+      <div class="action-buttons-group">
+        <a class="link-btn" *ngIf="signal.url" [href]="signal.url" target="_blank" rel="noreferrer">{{ getOpenLabel(signal) }}</a>
+        <button type="button" class="ghost-btn" (click)="markAsRead.emit(signal.id)">Mark as read</button>
+        <button type="button" class="ghost-btn" (click)="archive.emit(signal.id)">Archive</button>
+      </div>
     </div>
   </article>
 </section>
+
+<div class="toast-container" *ngIf="toastMessage">
+  <div class="toast">{{ toastMessage }}</div>
+</div>

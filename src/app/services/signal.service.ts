@@ -68,6 +68,7 @@ export class SignalService {
   private mapSignal(signal: SignalResponse): Signal {
     return {
       id: String(signal.id),
+      workspaceId: signal.workspace_id,
       sourceType: signal.source_type,
       sourceId: signal.source_id,
       externalId: signal.external_id ?? '',

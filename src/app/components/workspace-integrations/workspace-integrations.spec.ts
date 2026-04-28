@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { WorkspaceIntegrationsComponent } from './workspace-integrations';
 import { IntegrationService } from '../../services/integration.service';
 
@@ -21,6 +21,7 @@ describe('WorkspaceIntegrationsComponent', () => {
       'disconnectGitHub',
       'syncGitHub',
       'getJiraProjects',
+      'getJiraStatus',
       'connectJira',
       'disconnectJira',
       'syncJira'
@@ -53,10 +54,14 @@ describe('WorkspaceIntegrationsComponent', () => {
     mockIntegrationService.disconnectGitHub.and.returnValue(of(void 0));
     mockIntegrationService.connectGitHub.and.returnValue(of(void 0));
 
+    mockIntegrationService.getJiraStatus.and.returnValue(of({
+      connected: true,
+      lastSyncAt: new Date('2026-04-01T12:00:00Z')
+    }));
     mockIntegrationService.getJiraProjects.and.returnValue(of({
-      connected: false,
-      resources: [],
-      lastSyncAt: undefined
+      connected: true,
+      resources: [{ id: 'abc', url: 'https://test.atlassian.net', name: 'Test Site', scopes: [], avatarUrl: '' }],
+      lastSyncAt: new Date('2026-04-01T12:00:00Z')
     }));
     mockIntegrationService.connectJira.and.returnValue(of(void 0));
     mockIntegrationService.disconnectJira.and.returnValue(of(void 0));
@@ -103,5 +108,96 @@ describe('WorkspaceIntegrationsComponent', () => {
 
     expect(mockIntegrationService.updateSlackChannels).toHaveBeenCalledWith('workspace-1', ['C123']);
     expect(component.slackFeedbackMessage).toContain('saved');
+  });
+
+  // --- Jira persistence tests ---
+
+  it('should show Jira as connected when integration record exists', () => {
+    // getJiraStatus returns connected: true (set in beforeEach)
+    expect(component.isJiraConnected).toBeTrue();
+    expect(mockIntegrationService.getJiraStatus).toHaveBeenCalledWith('workspace-1');
+  });
+
+  it('should show Jira as disconnected when no integration record exists', () => {
+    mockIntegrationService.getJiraStatus.and.returnValue(of({
+      connected: false
+    }));
+
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    expect(component.isJiraConnected).toBeFalse();
+  });
+
+  it('should keep Jira connected even when project API call fails', () => {
+    mockIntegrationService.getJiraStatus.and.returnValue(of({
+      connected: true,
+      lastSyncAt: new Date('2026-04-01T12:00:00Z')
+    }));
+    mockIntegrationService.getJiraProjects.and.returnValue(
+      throwError(() => new Error('Token expired'))
+    );
+
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    // The key assertion: Jira should still appear connected even though projects API failed
+    expect(component.isJiraConnected).toBeTrue();
+    expect(component.jiraResources).toEqual([]);
+    expect(component.jiraErrorMessage).toContain('Could not load Jira projects');
+  });
+
+  it('should load Jira projects when connected', () => {
+    expect(component.jiraResources.length).toBe(1);
+    expect(component.jiraResources[0].name).toBe('Test Site');
+  });
+
+  it('should not load projects when Jira is disconnected', () => {
+    mockIntegrationService.getJiraStatus.and.returnValue(of({
+      connected: false
+    }));
+
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    // getJiraProjects should only have been called during the first beforeEach init,
+    // not during this re-init
+    const callCount = mockIntegrationService.getJiraProjects.calls.count();
+    // First call is from beforeEach, second ngOnInit should NOT call it
+    expect(callCount).toBe(1);
+  });
+
+  it('should disconnect Jira only through explicit disconnect button', () => {
+    expect(component.isJiraConnected).toBeTrue();
+
+    component.disconnectJira();
+    fixture.detectChanges();
+
+    expect(mockIntegrationService.disconnectJira).toHaveBeenCalledWith('workspace-1');
+  });
+
+  it('should preserve Jira connection state when status check errors', () => {
+    // Start connected
+    expect(component.isJiraConnected).toBeTrue();
+
+    // Now simulate a network error on re-check
+    mockIntegrationService.getJiraStatus.and.returnValue(
+      throwError(() => new Error('Network error'))
+    );
+
+    // Simulate re-navigating to the page (window focus)
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    // Connection state should NOT flip to false due to the error
+    expect(component.isJiraConnected).toBeTrue();
+  });
+
+  it('should trigger Jira sync correctly', () => {
+    component.syncJiraNow();
+    fixture.detectChanges();
+
+    expect(mockIntegrationService.syncJira).toHaveBeenCalledWith('workspace-1');
+    expect(component.jiraFeedbackMessage).toContain('started');
   });
 });
