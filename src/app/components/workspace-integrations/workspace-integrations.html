@@ -154,16 +154,16 @@
   <section class="selection-card" *ngIf="isJiraConnected">
     <div class="section-head">
       <div>
-        <h3>Jira projects</h3>
-        <p>Projects visible to the connected Jira account.</p>
+        <h3>Jira Cloud Resources</h3>
+        <p>Accessible Atlassian cloud sites.</p>
       </div>
     </div>
 
     <div class="repo-list">
-      <div class="repo-item" *ngFor="let project of jiraProjects">
+      <div class="repo-item" *ngFor="let resource of jiraResources">
         <span>
-          <strong>{{ project.key }} - {{ project.name }}</strong>
-          <small>{{ project.siteName || project.siteUrl }}</small>
+          <strong>{{ resource.name }}</strong>
+          <small>{{ resource.url }}</small>
         </span>
       </div>
     </div>
