@@ -49,9 +49,19 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   isJiraSyncing = false;
 
   ngOnInit(): void {
-    this.workspaceId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.workspaceId = this.getWorkspaceIdFromRoute() ?? '';
     this.loadAllIntegrations();
     window.addEventListener('focus', this.onWindowFocus);
+  }
+
+  private getWorkspaceIdFromRoute(): string | null {
+    for (const route of this.route.pathFromRoot) {
+      const id = route.snapshot.paramMap.get('id');
+      if (id) {
+        return id;
+      }
+    }
+    return null;
   }
 
   ngOnDestroy(): void {
