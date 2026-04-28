@@ -26,7 +26,11 @@
     <p class="signal-body">{{ signal.content }}</p>
 
     <div class="signal-badges">
-      <span class="badge neutral" *ngIf="signal.sourceType === 'github'">{{ signal.metadata.state }}</span>
+      <span class="badge" 
+            [ngClass]="signal.metadata.state === 'open' ? 'success' : 'danger'"
+            *ngIf="signal.sourceType === 'github'">
+        {{ signal.metadata.state }}
+      </span>
       <span class="badge neutral" *ngIf="signal.sourceType === 'slack'">#{{ getSlackChannel(signal) }}</span>
       <span class="badge neutral" *ngIf="signal.sourceType === 'jira'">{{ signal.metadata.issueType }}</span>
       <span class="badge neutral" *ngIf="signal.sourceType === 'jira' && signal.metadata.priority">{{ signal.metadata.priority }}</span>
@@ -46,8 +50,16 @@
         <button type="button" class="ghost-btn" [disabled]="submittingComment[signal.id] || !jiraComments[signal.id]" (click)="addJiraComment(signal)">Comment</button>
       </div>
 
+      <div class="github-comment-section" *ngIf="signal.sourceType === 'github'">
+        <input type="text" placeholder="Reply on GitHub..." [(ngModel)]="githubComments[signal.id]" [disabled]="submittingGitHubComment[signal.id]">
+        <button type="button" class="ghost-btn" [disabled]="submittingGitHubComment[signal.id] || !githubComments[signal.id]" (click)="addGitHubComment(signal)">Comment</button>
+      </div>
+
       <div class="action-buttons-group">
         <a class="link-btn" *ngIf="signal.url" [href]="signal.url" target="_blank" rel="noreferrer">{{ getOpenLabel(signal) }}</a>
+        <button type="button" class="ghost-btn" *ngIf="signal.sourceType === 'github'" (click)="toggleGitHubState(signal)">
+          {{ signal.metadata.state === 'open' ? 'Close Issue' : 'Reopen' }}
+        </button>
         <button type="button" class="ghost-btn" (click)="markAsRead.emit(signal.id)">Mark as read</button>
         <button type="button" class="ghost-btn" (click)="archive.emit(signal.id)">Archive</button>
       </div>

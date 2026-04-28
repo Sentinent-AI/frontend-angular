@@ -114,23 +114,24 @@ export class IntegrationService {
     );
   }
 
-  getGitHubAuthUrl(): Observable<{ authUrl: string }> {
-    return this.http.get<OAuthResponse>(`${this.apiUrl}/github/auth`).pipe(
+  getGitHubAuthUrl(workspaceId: string): Observable<{ authUrl: string }> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.get<OAuthResponse>(`${this.apiUrl}/github/auth`, { params }).pipe(
       map((response) => ({ authUrl: response.auth_url })),
       catchError((error) => throwError(() => toError(error, 'Unable to start GitHub connection.'))),
     );
   }
 
-  connectGitHub(): Observable<void> {
-    return this.getGitHubAuthUrl().pipe(
+  connectGitHub(workspaceId: string): Observable<void> {
+    return this.getGitHubAuthUrl(workspaceId).pipe(
       map(({ authUrl }) => {
         window.open(authUrl, '_blank');
       }),
     );
   }
 
-  getGitHubRepos(): Observable<GitHubConnectionState> {
-    return this.getIntegrations().pipe(
+  getGitHubRepos(workspaceId: string): Observable<GitHubConnectionState> {
+    return this.getIntegrations(workspaceId).pipe(
       switchMap((integrations) => {
         const githubIntegration = integrations.find((integration) => integration.provider === 'github');
         if (!githubIntegration) {
@@ -142,8 +143,9 @@ export class IntegrationService {
 
         const metadata = this.parseMetadata(githubIntegration.metadata);
         const selectedRepoIds = this.readNumberArray(metadata['selected_repo_ids']);
+        const params = new HttpParams().set('workspace_id', workspaceId);
 
-        return this.http.get<GitHubRepoResponse[]>(`${this.apiUrl}/github/repos`).pipe(
+        return this.http.get<GitHubRepoResponse[]>(`${this.apiUrl}/github/repos`, { params }).pipe(
           map((repos) => ({
             connected: true,
             repos: repos.map((repo) => this.mapGitHubRepo(repo, selectedRepoIds)),
@@ -157,20 +159,23 @@ export class IntegrationService {
     );
   }
 
-  updateGitHubRepos(repoIds: number[]): Observable<void> {
-    return this.http.patch<void>(`${this.apiUrl}/github/repos`, { repo_ids: repoIds }).pipe(
+  updateGitHubRepos(workspaceId: string, repoIds: number[]): Observable<void> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.patch<void>(`${this.apiUrl}/github/repos`, { repo_ids: repoIds }, { params }).pipe(
       catchError((error) => throwError(() => toError(error, 'Unable to save repository selection.'))),
     );
   }
 
-  disconnectGitHub(): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/github`).pipe(
+  disconnectGitHub(workspaceId: string): Observable<void> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.delete<void>(`${this.apiUrl}/github`, { params }).pipe(
       catchError((error) => throwError(() => toError(error, 'Unable to disconnect GitHub.'))),
     );
   }
 
-  syncGitHub(): Observable<SyncStatus> {
-    return this.http.post<GitHubSyncResponse>(`${this.apiUrl}/github/sync`, {}).pipe(
+  syncGitHub(workspaceId: string): Observable<SyncStatus> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.post<GitHubSyncResponse>(`${this.apiUrl}/github/sync`, {}, { params }).pipe(
       map((response) => {
         const status: SyncStatus['status'] = response.status === 'sync_started' ? 'in_progress' : 'failed';
         return {
@@ -179,6 +184,20 @@ export class IntegrationService {
         };
       }),
       catchError((error) => throwError(() => toError(error, 'Unable to sync GitHub.'))),
+    );
+  }
+
+  addGitHubComment(workspaceId: string, repo: string, number: number, comment: string): Observable<void> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.post<void>(`${this.apiUrl}/github/issues/${number}/comments`, { repo, body: comment }, { params }).pipe(
+      catchError((error) => throwError(() => toError(error, 'Unable to add GitHub comment.'))),
+    );
+  }
+
+  updateGitHubIssueState(workspaceId: string, repo: string, number: number, state: string): Observable<void> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.patch<void>(`${this.apiUrl}/github/issues/${number}/state`, { repo, state }, { params }).pipe(
+      catchError((error) => throwError(() => toError(error, 'Unable to update GitHub issue status.'))),
     );
   }
 

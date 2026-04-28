@@ -1,14 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Invitation, InvitationRole, WorkspaceMember, WorkspaceRole } from '../../models/workspace-member.model';
 import { WorkspaceMemberService } from '../../services/workspace-member.service';
 
 @Component({
   selector: 'app-workspace-members',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   templateUrl: './workspace-members.html',
   styleUrl: './workspace-members.css'
 })
