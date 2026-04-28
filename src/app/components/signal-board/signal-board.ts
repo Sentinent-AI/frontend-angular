@@ -23,6 +23,8 @@ export class SignalBoardComponent {
   loadingTransitions: { [signalId: string]: boolean } = {};
   jiraComments: { [signalId: string]: string } = {};
   submittingComment: { [signalId: string]: boolean } = {};
+  githubComments: { [signalId: string]: string } = {};
+  submittingGitHubComment: { [signalId: string]: boolean } = {};
   toastMessage = '';
 
   trackBySignal(_: number, signal: Signal): string {
@@ -147,5 +149,53 @@ export class SignalBoardComponent {
       this.toastMessage = '';
       this.cdr.detectChanges();
     }, 4000);
+  }
+
+  addGitHubComment(signal: Signal) {
+    const workspaceId = String(signal.workspaceId ?? '');
+    const repo = signal.metadata.repository;
+    const number = signal.metadata.number;
+    const comment = this.githubComments[signal.id];
+
+    if (!comment || !comment.trim() || !repo || !number) return;
+
+    this.submittingGitHubComment[signal.id] = true;
+    this.integrationService.addGitHubComment(workspaceId, repo, number, comment).subscribe({
+      next: () => {
+        this.showToast('Comment added to GitHub');
+        this.githubComments[signal.id] = '';
+        this.submittingGitHubComment[signal.id] = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.showToast('Failed to add GitHub comment');
+        this.submittingGitHubComment[signal.id] = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  toggleGitHubState(signal: Signal) {
+    const workspaceId = String(signal.workspaceId ?? '');
+    const repo = signal.metadata.repository;
+    const number = signal.metadata.number;
+    const currentState = signal.metadata.state;
+
+    if (!repo || !number) return;
+
+    const newState = currentState === 'open' ? 'closed' : 'open';
+
+    this.integrationService.updateGitHubIssueState(workspaceId, repo, number, newState).subscribe({
+      next: () => {
+        this.showToast(`Issue ${newState === 'closed' ? 'closed' : 'reopened'}`);
+        if (signal.metadata) {
+          signal.metadata.state = newState;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.showToast('Failed to update GitHub status');
+      }
+    });
   }
 }

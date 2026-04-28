@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { IntegrationService } from '../../services/integration.service';
 import { GitHubRepo, SyncStatus } from '../../models/github-integration.model';
 import { SlackChannel } from '../../models/slack-integration.model';
@@ -9,7 +9,7 @@ import { AtlassianResource, JiraSyncStatus } from '../../models/jira-integration
 @Component({
   selector: 'app-workspace-integrations',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   templateUrl: './workspace-integrations.html',
   styleUrl: './workspace-integrations.css'
 })
@@ -108,7 +108,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   connectGitHub(): void {
     this.githubErrorMessage = '';
     this.githubFeedbackMessage = 'Starting GitHub connection...';
-    this.integrationService.connectGitHub().subscribe({
+    this.integrationService.connectGitHub(this.workspaceId).subscribe({
       error: (error: Error) => {
         this.githubErrorMessage = error.message;
         this.githubFeedbackMessage = '';
@@ -117,7 +117,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   }
 
   disconnectGitHub(): void {
-    this.integrationService.disconnectGitHub().subscribe(() => {
+    this.integrationService.disconnectGitHub(this.workspaceId).subscribe(() => {
       this.githubSyncStatus = undefined;
       this.githubFeedbackMessage = 'GitHub integration disconnected.';
       this.loadRepos();
@@ -189,7 +189,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   saveRepoSelection(): void {
     this.isGitHubSaving = true;
     this.githubErrorMessage = '';
-    this.integrationService.updateGitHubRepos(this.selectedRepoIds).subscribe({
+    this.integrationService.updateGitHubRepos(this.workspaceId, this.selectedRepoIds).subscribe({
       next: () => {
         this.isGitHubSaving = false;
         this.githubFeedbackMessage = 'Repository selection saved.';
@@ -205,7 +205,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   syncNow(): void {
     this.isSyncing = true;
     this.githubErrorMessage = '';
-    this.integrationService.syncGitHub().subscribe({
+    this.integrationService.syncGitHub(this.workspaceId).subscribe({
       next: (status) => {
         this.githubSyncStatus = status;
         this.isSyncing = false;
@@ -260,7 +260,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   }
 
   private loadRepos(): void {
-    this.integrationService.getGitHubRepos().subscribe(response => {
+    this.integrationService.getGitHubRepos(this.workspaceId).subscribe(response => {
       this.isGitHubConnected = response.connected;
       this.repos = response.repos;
       this.selectedRepoIds = response.repos.filter(repo => repo.isConnected).map(repo => repo.id);
