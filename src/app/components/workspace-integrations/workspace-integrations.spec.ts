@@ -70,7 +70,8 @@ describe('WorkspaceIntegrationsComponent', () => {
           provide: ActivatedRoute,
           useValue: {
             snapshot: {
-              paramMap: convertToParamMap({ id: 'workspace-1' })
+              paramMap: convertToParamMap({ id: 'workspace-1' }),
+              queryParamMap: convertToParamMap({})
             }
           }
         }
