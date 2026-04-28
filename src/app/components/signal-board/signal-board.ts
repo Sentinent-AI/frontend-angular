@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, ChangeDetectorRef } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Signal } from '../../models/signal.model';
+import { IntegrationService } from '../../services/integration.service';
 
 @Component({
   selector: 'app-signal-board',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './signal-board.html',
   styleUrl: './signal-board.css'
 })
@@ -13,6 +15,15 @@ export class SignalBoardComponent {
   @Input() signals: Signal[] = [];
   @Output() markAsRead = new EventEmitter<string>();
   @Output() archive = new EventEmitter<string>();
+
+  private integrationService = inject(IntegrationService);
+  private cdr = inject(ChangeDetectorRef);
+
+  activeJiraTransitions: { [signalId: string]: any[] } = {};
+  loadingTransitions: { [signalId: string]: boolean } = {};
+  jiraComments: { [signalId: string]: string } = {};
+  submittingComment: { [signalId: string]: boolean } = {};
+  toastMessage = '';
 
   trackBySignal(_: number, signal: Signal): string {
     return signal.id;
@@ -60,5 +71,81 @@ export class SignalBoardComponent {
 
   getSlackChannel(signal: Signal): string {
     return String(signal.metadata['channel'] ?? 'channel');
+  }
+
+  loadJiraTransitions(signal: Signal) {
+    if (signal.sourceType !== 'jira' || this.activeJiraTransitions[signal.id]) return;
+    
+    const workspaceId = String(signal.workspaceId ?? '');
+    const issueKey = signal.externalId;
+    if (!workspaceId || !issueKey) return;
+
+    this.loadingTransitions[signal.id] = true;
+    this.integrationService.getJiraTransitions(workspaceId, issueKey).subscribe({
+      next: (transitions) => {
+        this.activeJiraTransitions[signal.id] = transitions;
+        this.loadingTransitions[signal.id] = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadingTransitions[signal.id] = false;
+        this.showToast('Failed to load Jira transitions');
+      }
+    });
+  }
+
+  onJiraTransitionChange(signal: Signal, event: Event) {
+    const transitionId = (event.target as HTMLSelectElement).value;
+    if (!transitionId) return;
+
+    const workspaceId = String(signal.workspaceId ?? '');
+    const issueKey = signal.externalId;
+    
+    this.integrationService.performJiraTransition(workspaceId, issueKey, transitionId).subscribe({
+      next: () => {
+        this.showToast('Status updated successfully');
+        const transition = this.activeJiraTransitions[signal.id]?.find(t => t.id === transitionId);
+        if (transition && signal.metadata) {
+          signal.metadata['status'] = transition.to?.name || 'Updated';
+        }
+        delete this.activeJiraTransitions[signal.id];
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.showToast(err.message || 'Failed to update Jira status');
+      }
+    });
+  }
+
+  addJiraComment(signal: Signal) {
+    const workspaceId = String(signal.workspaceId ?? '');
+    const issueKey = signal.externalId;
+    const comment = this.jiraComments[signal.id];
+    
+    if (!comment || !comment.trim()) return;
+
+    this.submittingComment[signal.id] = true;
+    this.integrationService.addJiraComment(workspaceId, issueKey, comment).subscribe({
+      next: () => {
+        this.showToast('Comment added successfully');
+        this.jiraComments[signal.id] = '';
+        this.submittingComment[signal.id] = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.showToast('Failed to add comment');
+        this.submittingComment[signal.id] = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  showToast(msg: string) {
+    this.toastMessage = msg;
+    this.cdr.detectChanges();
+    setTimeout(() => {
+      this.toastMessage = '';
+      this.cdr.detectChanges();
+    }, 4000);
   }
 }

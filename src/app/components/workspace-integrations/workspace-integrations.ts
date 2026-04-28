@@ -49,9 +49,19 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   isJiraSyncing = false;
 
   ngOnInit(): void {
-    this.workspaceId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.workspaceId = this.getWorkspaceIdFromRoute() ?? '';
     this.loadAllIntegrations();
     window.addEventListener('focus', this.onWindowFocus);
+  }
+
+  private getWorkspaceIdFromRoute(): string | null {
+    for (const route of this.route.pathFromRoot) {
+      const id = route.snapshot.paramMap.get('id');
+      if (id) {
+        return id;
+      }
+    }
+    return null;
   }
 
   ngOnDestroy(): void {
@@ -60,9 +70,9 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
 
   private onWindowFocus = (): void => {
     // If we have an active feedback message, let's refresh to see if connection succeeded in background
-    if (this.slackFeedbackMessage === 'Starting Slack connection...' || 
-        this.githubFeedbackMessage === 'Starting GitHub connection...' || 
-        this.jiraFeedbackMessage === 'Starting Jira connection...') {
+    if (this.slackFeedbackMessage === 'Starting Slack connection...' ||
+      this.githubFeedbackMessage === 'Starting GitHub connection...' ||
+      this.jiraFeedbackMessage === 'Starting Jira connection...') {
       this.slackFeedbackMessage = '';
       this.githubFeedbackMessage = '';
       this.jiraFeedbackMessage = '';
@@ -260,10 +270,46 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   }
 
   private loadJira(): void {
-    this.integrationService.getJiraProjects(this.workspaceId).subscribe(response => {
-      this.isJiraConnected = response.connected;
-      this.jiraResources = response.resources;
-      this.jiraLastSyncAt = response.lastSyncAt;
+    console.log('[WorkspaceIntegrations] loadJira() called, workspaceId:', this.workspaceId);
+    // First, check connection status from the DB record (source of truth).
+    // This prevents transient Jira API failures from flipping the UI to "disconnected".
+    this.integrationService.getJiraStatus(this.workspaceId).subscribe({
+      next: (status) => {
+        console.log('[WorkspaceIntegrations] getJiraStatus returned:', status);
+        this.isJiraConnected = status.connected;
+        this.jiraLastSyncAt = status.lastSyncAt;
+
+        // Only attempt to load projects if the integration record exists.
+        if (status.connected) {
+          this.loadJiraProjects();
+        } else {
+          this.jiraResources = [];
+        }
+      },
+      error: (err) => {
+        console.error('[WorkspaceIntegrations] getJiraStatus error:', err);
+        // On error checking status, don't change connection state
+        // (preserve whatever it was before — "don't disconnect on error").
+      }
+    });
+  }
+
+  private loadJiraProjects(): void {
+    this.integrationService.getJiraProjects(this.workspaceId).subscribe({
+      next: (response) => {
+        // Projects loaded successfully; update resource list.
+        // Connection status is already set by loadJira(), so we don't touch isJiraConnected here.
+        this.jiraResources = response.resources ?? [];
+        if (response.lastSyncAt) {
+          this.jiraLastSyncAt = response.lastSyncAt;
+        }
+      },
+      error: () => {
+        // Project fetch failed (e.g., expired token) but integration still exists.
+        // Keep isJiraConnected = true; just show empty resources.
+        this.jiraResources = [];
+        this.jiraErrorMessage = 'Could not load Jira projects. The connection may need to be refreshed.';
+      }
     });
   }
 }

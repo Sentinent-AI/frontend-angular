@@ -241,6 +241,33 @@ export class IntegrationService {
     );
   }
 
+  getJiraTransitions(workspaceId: string, issueKey: string): Observable<any[]> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.get<any[]>(`${this.apiUrl}/jira/issues/${issueKey}/transitions`, { params }).pipe(
+      catchError((error) => throwError(() => toError(error, 'Unable to load Jira transitions.'))),
+    );
+  }
+
+  performJiraTransition(workspaceId: string, issueKey: string, transitionId: string): Observable<void> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.post<void>(`${this.apiUrl}/jira/issues/${issueKey}/transitions`, { transitionId }, { params }).pipe(
+      catchError((error) => {
+        // If it's a 400, it might be due to missing fields required by the transition
+        if (error.status === 400) {
+          return throwError(() => new Error('This transition requires additional fields. Please update directly in Jira.'));
+        }
+        return throwError(() => toError(error, 'Unable to perform Jira transition.'));
+      }),
+    );
+  }
+
+  addJiraComment(workspaceId: string, issueKey: string, comment: string): Observable<void> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.post<void>(`${this.apiUrl}/jira/issues/${issueKey}/comments`, { body: comment }, { params }).pipe(
+      catchError((error) => throwError(() => toError(error, 'Unable to add Jira comment.'))),
+    );
+  }
+
   private getIntegrations(workspaceId?: string): Observable<IntegrationRecord[]> {
     let params = new HttpParams();
     if (workspaceId) {
@@ -248,7 +275,12 @@ export class IntegrationService {
     }
 
     return this.http.get<IntegrationRecord[]>(this.apiUrl, { params }).pipe(
+      map((records) => {
+        console.log('[IntegrationService] getIntegrations response:', JSON.stringify(records));
+        return records;
+      }),
       catchError((error) => {
+        console.error('[IntegrationService] getIntegrations error:', error.status, error.message);
         if (error.status === 404) {
           return of([]);
         }
@@ -289,5 +321,29 @@ export class IntegrationService {
       fullName: repo.full_name,
       isConnected: selectedRepoIds.includes(repo.id),
     };
+  }
+
+  /**
+   * Checks Jira connection status by looking for the integration record in the DB.
+   * This is separate from getJiraProjects() which makes actual Jira API calls.
+   * Connection state should be determined by the DB record, not by whether the API is reachable.
+   */
+  getJiraStatus(workspaceId: string): Observable<{ connected: boolean; lastSyncAt?: Date }> {
+    console.log('[IntegrationService] getJiraStatus called for workspace:', workspaceId);
+    return this.getIntegrations(workspaceId).pipe(
+      map((integrations) => {
+        const jiraIntegration = integrations.find((i) => i.provider === 'jira');
+        const result = {
+          connected: !!jiraIntegration,
+          lastSyncAt: jiraIntegration?.updated_at ? new Date(jiraIntegration.updated_at) : undefined,
+        };
+        console.log('[IntegrationService] getJiraStatus result:', result, 'jiraRecord:', jiraIntegration);
+        return result;
+      }),
+      catchError((err) => {
+        console.error('[IntegrationService] getJiraStatus error:', err);
+        return of({ connected: false });
+      }),
+    );
   }
 }

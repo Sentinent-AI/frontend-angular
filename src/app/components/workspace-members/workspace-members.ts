@@ -30,9 +30,19 @@ export class WorkspaceMembersComponent implements OnInit {
   readonly availableRoles: WorkspaceRole[] = ['owner', 'member', 'viewer'];
 
   ngOnInit(): void {
-    this.workspaceId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.workspaceId = this.getWorkspaceIdFromRoute() ?? '';
     this.loadMembers();
     this.loadInvitations();
+  }
+
+  private getWorkspaceIdFromRoute(): string | null {
+    for (const route of this.route.pathFromRoot) {
+      const id = route.snapshot.paramMap.get('id');
+      if (id) {
+        return id;
+      }
+    }
+    return null;
   }
 
   inviteMember(): void {
