@@ -116,9 +116,28 @@
     />
 
     <ng-template #noSignals>
-      <div class="empty-state">
-        <h3>No matching signals</h3>
-        <p>Connect Slack, GitHub, or JIRA in your profile integrations to start pulling messages and assigned work into Sentinent.</p>
+      <!-- Variant 1: no integrations connected yet -->
+      <div class="empty-state empty-no-integrations" *ngIf="allSignals.length === 0">
+        <div class="empty-icon" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
+          </svg>
+        </div>
+        <h3>No signals yet</h3>
+        <p>Connect Slack, GitHub, or JIRA to start pulling messages and assigned work into Sentinent.</p>
+        <a routerLink="/profile" class="empty-cta">Connect integrations →</a>
+      </div>
+
+      <!-- Variant 2: integrations connected but tab/filter returns nothing -->
+      <div class="empty-state empty-caught-up" *ngIf="allSignals.length > 0">
+        <div class="empty-icon" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+        </div>
+        <h3>All caught up{{ sourceTab !== 'all' ? ' on ' + sourceTab : '' }}</h3>
+        <p *ngIf="showUnreadOnly">No unread {{ sourceTab === 'all' ? '' : sourceTab + ' ' }}signals — you're up to date.</p>
+        <p *ngIf="!showUnreadOnly">No {{ sourceTab === 'all' ? '' : sourceTab + ' ' }}signals match the current filter.</p>
       </div>
     </ng-template>
   </section>
