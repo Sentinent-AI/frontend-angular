@@ -17,6 +17,10 @@
   padding: 42px 24px 64px;
 }
 
+:host > .profile-shell:first-of-type {
+  padding-top: calc(56px + 42px);
+}
+
 .profile-hero {
   display: flex;
   justify-content: space-between;

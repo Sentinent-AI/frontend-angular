@@ -8,11 +8,12 @@ import { UserProfileService } from '../../services/user-profile.service';
 import { WorkspaceService } from '../../services/workspace';
 import { Workspace } from '../../models/workspace';
 import { WorkspaceIntegrationsComponent } from '../workspace-integrations/workspace-integrations';
+import { AppNavComponent } from '../app-nav/app-nav';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, WorkspaceIntegrationsComponent],
+  imports: [CommonModule, FormsModule, RouterLink, WorkspaceIntegrationsComponent, AppNavComponent],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })

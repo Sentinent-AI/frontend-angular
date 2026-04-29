@@ -1,6 +1,5 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../services/auth';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { WorkspaceService } from '../../services/workspace';
 import { Workspace } from '../../models/workspace';
 import { CommonModule } from '@angular/common';
@@ -8,19 +7,18 @@ import { Signal, SignalFilters } from '../../models/signal.model';
 import { SignalService } from '../../services/signal.service';
 import { SignalBoardComponent } from '../signal-board/signal-board';
 import { SearchBarComponent } from '../search-bar/search-bar';
+import { AppNavComponent } from '../app-nav/app-nav';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, SignalBoardComponent, SearchBarComponent],
+  imports: [CommonModule, RouterLink, SignalBoardComponent, SearchBarComponent, AppNavComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
 export class Dashboard implements OnInit, OnDestroy {
-  private authService = inject(AuthService);
   private workspaceService = inject(WorkspaceService);
   private signalService = inject(SignalService);
-  private router = inject(Router);
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
 
@@ -107,11 +105,6 @@ export class Dashboard implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
-  }
-
-  logout() {
-    this.authService.logout();
-    this.router.navigate(['/login']);
   }
 
   setSourceFilter(source: SignalFilters['source']): void {
