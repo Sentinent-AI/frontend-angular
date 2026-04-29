@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { catchError, map, Observable, throwError } from 'rxjs';
+import { catchError, map, Observable, throwError, timeout } from 'rxjs';
 import {
   Invitation,
   InvitationRole,
@@ -61,6 +61,7 @@ export class WorkspaceMemberService {
     return this.http
       .post<InvitationResponse>(`${this.apiUrl}/workspaces/${workspaceId}/invitations`, { email, role })
       .pipe(
+        timeout(20000), // fail after 20 s so the button never stays stuck
         map((invitation) => this.mapInvitation(invitation)),
         catchError((error) => throwError(() => toError(error, 'Unable to create invitation.'))),
       );
