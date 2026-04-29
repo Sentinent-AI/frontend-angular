@@ -24,7 +24,8 @@ describe('WorkspaceIntegrationsComponent', () => {
       'getJiraStatus',
       'connectJira',
       'disconnectJira',
-      'syncJira'
+      'syncJira',
+      'syncSlack'
     ]);
 
     mockIntegrationService.getSlackChannels.and.returnValue(of({
@@ -39,6 +40,7 @@ describe('WorkspaceIntegrationsComponent', () => {
     mockIntegrationService.updateSlackChannels.and.returnValue(of(void 0));
     mockIntegrationService.disconnectSlack.and.returnValue(of(void 0));
     mockIntegrationService.connectSlack.and.returnValue(of(void 0));
+    mockIntegrationService.syncSlack.and.returnValue(of({ syncId: 'sync-slack-1', status: 'in_progress' }));
 
     mockIntegrationService.getGitHubRepos.and.returnValue(of({
       connected: true,
@@ -108,11 +110,21 @@ describe('WorkspaceIntegrationsComponent', () => {
     expect(component.githubFeedbackMessage).toContain('started');
   });
 
-  it('should save slack channel selection', () => {
+  it('should save slack channel selection and trigger sync', () => {
     component.saveSlackChannelSelection();
+    fixture.detectChanges();
 
     expect(mockIntegrationService.updateSlackChannels).toHaveBeenCalledWith('workspace-1', ['C123']);
-    expect(component.slackFeedbackMessage).toContain('saved');
+    // Since syncSlackNow() is called immediately, the message will be the sync one
+    expect(component.slackFeedbackMessage).toContain('Slack sync started');
+  });
+
+  it('should trigger manual slack sync', () => {
+    component.syncSlackNow();
+    fixture.detectChanges();
+
+    expect(mockIntegrationService.syncSlack).toHaveBeenCalledWith('workspace-1');
+    expect(component.slackFeedbackMessage).toContain('Slack sync started');
   });
 
   // --- Jira persistence tests ---
