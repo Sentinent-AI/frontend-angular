@@ -27,6 +27,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
   slackChannels: SlackChannel[] = [];
   selectedSlackChannelIds: string[] = [];
   isSlackConnected = false;
+  isEditingChannels = false;
   slackWorkspaceName = '';
   slackWorkspaceUrl = '';
   slackLastSyncAt?: Date;
@@ -98,7 +99,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
   };
 
   private loadAllIntegrations(): void {
-    this.loadSlackChannels();
+    this.loadSlackChannels(true);
     this.loadRepos();
     this.loadJira();
   }
@@ -127,6 +128,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
 
   disconnectSlack(): void {
     this.integrationService.disconnectSlack(this.workspaceId).subscribe(() => {
+      this.isEditingChannels = false;
       this.slackFeedbackMessage = 'Slack integration disconnected.';
       this.cdr.detectChanges();
       this.loadSlackChannels();
@@ -227,6 +229,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
     ).subscribe({
       next: () => {
         this.slackFeedbackMessage = 'Slack channel selection saved.';
+        this.isEditingChannels = false;
         this.cdr.detectChanges();
         this.loadSlackChannels();
         this.syncSlackNow();
@@ -257,6 +260,22 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
         this.cdr.detectChanges();
       }
     });
+  }
+
+  get hasSavedChannels(): boolean {
+    return this.slackChannels.some(c => c.isConnected);
+  }
+
+  editChannels(): void {
+    this.isEditingChannels = true;
+    this.cdr.detectChanges();
+  }
+
+  cancelEditChannels(): void {
+    this.isEditingChannels = false;
+    // Reset checkboxes back to what was last saved
+    this.selectedSlackChannelIds = this.slackChannels.filter(c => c.isConnected).map(c => c.id);
+    this.cdr.detectChanges();
   }
 
   get hasSavedRepos(): boolean {
@@ -344,7 +363,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
     return this.selectedRepoIds.includes(repoId);
   }
 
-  private loadSlackChannels(): void {
+  private loadSlackChannels(applyEditMode = false): void {
     this.integrationService.getSlackChannels(this.workspaceId).subscribe(response => {
       this.isSlackConnected = response.connected;
       this.slackChannels = response.channels;
@@ -352,6 +371,18 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
       this.slackWorkspaceName = response.workspaceName ?? '';
       this.slackWorkspaceUrl = response.workspaceUrl ?? '';
       this.slackLastSyncAt = response.lastSyncAt;
+      // Only update edit mode during initial load (ngOnInit / window focus).
+      // Post-save and post-sync refreshes must NOT change edit mode — the Slack
+      // API call inside getSlackChannels() may return an empty channel list on
+      // transient errors, which would incorrectly flip isEditingChannels back to
+      // true and make the UI look "stuck loading".
+      if (applyEditMode) {
+        if (response.connected && this.selectedSlackChannelIds.length === 0) {
+          this.isEditingChannels = true;
+        } else if (this.selectedSlackChannelIds.length > 0) {
+          this.isEditingChannels = false;
+        }
+      }
       this.cdr.detectChanges();
     });
   }

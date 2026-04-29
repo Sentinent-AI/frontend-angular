@@ -35,15 +35,44 @@
   <p class="feedback success" *ngIf="slackFeedbackMessage">{{ slackFeedbackMessage }}</p>
   <p class="feedback error" *ngIf="slackErrorMessage">{{ slackErrorMessage }}</p>
 
-  <section class="selection-card" *ngIf="isSlackConnected">
+  <!-- Saved channels summary — shown when channels are saved and not editing -->
+  <section class="selection-card" *ngIf="isSlackConnected && !isEditingChannels">
+    <div class="section-head">
+      <div>
+        <h3>Connected channels</h3>
+        <p *ngIf="selectedSlackChannelIds.length > 0">
+          {{ selectedSlackChannelIds.length }} {{ selectedSlackChannelIds.length === 1 ? 'channel' : 'channels' }} selected.
+        </p>
+        <p *ngIf="selectedSlackChannelIds.length === 0">No channels selected yet.</p>
+      </div>
+      <button type="button" class="secondary-btn" (click)="editChannels()">Edit channels</button>
+    </div>
+
+    <div class="repo-list">
+      <div class="repo-item repo-item--readonly" *ngFor="let channel of slackChannels">
+        <span class="repo-status-dot" [class.active]="isSlackChannelSelected(channel.id)"></span>
+        <span>
+          <strong>#{{ channel.name }}</strong>
+          <small>{{ channel.id }}</small>
+        </span>
+        <span class="repo-tag" *ngIf="isSlackChannelSelected(channel.id)">Active</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Edit mode — shown on first connect or when user clicks "Edit channels" -->
+  <section class="selection-card" *ngIf="isSlackConnected && isEditingChannels">
     <div class="section-head">
       <div>
         <h3>Channel selection</h3>
         <p>Choose which Slack channels should appear as signals in the dashboard.</p>
       </div>
-      <button type="button" class="primary-btn slack-btn" [disabled]="isSlackSaving" (click)="saveSlackChannelSelection()">
-        {{ isSlackSaving ? 'Saving...' : 'Save Channels' }}
-      </button>
+      <div class="section-head-actions">
+        <button type="button" class="secondary-btn" (click)="cancelEditChannels()" *ngIf="hasSavedChannels">Cancel</button>
+        <button type="button" class="primary-btn slack-btn" [disabled]="isSlackSaving" (click)="saveSlackChannelSelection()">
+          {{ isSlackSaving ? 'Saving...' : 'Save Channels' }}
+        </button>
+      </div>
     </div>
 
     <div class="repo-list">

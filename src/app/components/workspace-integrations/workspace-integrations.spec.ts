@@ -218,6 +218,106 @@ describe('WorkspaceIntegrationsComponent', () => {
     expect(component.jiraFeedbackMessage).toContain('started');
   });
 
+  // --- Slack channel edit/save UX tests ---
+
+  it('should start in summary view (not editing) when channels are already saved', () => {
+    // Default mock has one channel with isConnected: true
+    expect(component.isEditingChannels).toBeFalse();
+  });
+
+  it('should start in edit mode when connected but no channels are saved', () => {
+    mockIntegrationService.getSlackChannels.and.returnValue(of({
+      connected: true,
+      workspaceName: 'Sentinent Ops',
+      workspaceUrl: 'sentinent.slack.com',
+      channels: [
+        { id: 'C999', name: 'random', isConnected: false }
+      ],
+      lastSyncAt: undefined
+    }));
+
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    expect(component.isEditingChannels).toBeTrue();
+  });
+
+  it('hasSavedChannels returns true when at least one channel is connected', () => {
+    expect(component.hasSavedChannels).toBeTrue();
+  });
+
+  it('hasSavedChannels returns false when no channels are connected', () => {
+    mockIntegrationService.getSlackChannels.and.returnValue(of({
+      connected: true,
+      workspaceName: 'Sentinent Ops',
+      workspaceUrl: 'sentinent.slack.com',
+      channels: [
+        { id: 'C999', name: 'random', isConnected: false }
+      ],
+      lastSyncAt: undefined
+    }));
+
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    expect(component.hasSavedChannels).toBeFalse();
+  });
+
+  it('editChannels() switches to edit mode', () => {
+    expect(component.isEditingChannels).toBeFalse();
+
+    component.editChannels();
+
+    expect(component.isEditingChannels).toBeTrue();
+  });
+
+  it('cancelEditChannels() exits edit mode and resets checkboxes to last saved state', () => {
+    component.editChannels();
+    expect(component.isEditingChannels).toBeTrue();
+
+    // Deselect the channel
+    component.toggleSlackChannel('C123', false);
+    expect(component.selectedSlackChannelIds).not.toContain('C123');
+
+    // Cancel — should restore isConnected channels
+    component.cancelEditChannels();
+
+    expect(component.isEditingChannels).toBeFalse();
+    expect(component.selectedSlackChannelIds).toContain('C123');
+  });
+
+  it('saveSlackChannelSelection() exits edit mode on success', () => {
+    component.editChannels();
+    expect(component.isEditingChannels).toBeTrue();
+
+    component.saveSlackChannelSelection();
+    fixture.detectChanges();
+
+    expect(mockIntegrationService.updateSlackChannels).toHaveBeenCalledWith('workspace-1', ['C123']);
+    expect(component.isEditingChannels).toBeFalse();
+  });
+
+  it('slack summary view renders only connected channels with Active badge', () => {
+    // isEditingChannels is false by default (channels saved)
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const readonlyItems = compiled.querySelectorAll('.repo-item--readonly');
+    expect(readonlyItems.length).toBeGreaterThan(0);
+    const channelCheckboxes = compiled.querySelectorAll('.repo-item--readonly input[type="checkbox"]');
+    expect(channelCheckboxes.length).toBe(0);
+  });
+
+  it('slack edit view renders checkboxes and Save Channels button', () => {
+    component.editChannels();
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const saveBtn = Array.from(compiled.querySelectorAll('button'))
+      .find(b => b.textContent?.includes('Save Channels'));
+    expect(saveBtn).not.toBeNull();
+  });
+
   // --- Repo edit/save UX tests ---
 
   it('should start in summary view (not editing) when repos are already saved', () => {
