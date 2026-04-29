@@ -15,6 +15,12 @@ import { Observable, Subject, takeUntil, startWith, switchMap, catchError, of } 
 export class DecisionListComponent implements OnInit, OnDestroy {
     decisions$: Observable<Decision[]> | undefined;
     error: string | null = null;
+
+    // Delete confirmation state
+    pendingDeleteDecision: Decision | null = null;
+    isDeletingDecision = false;
+    deleteDecisionError = '';
+
     private refresh$ = new Subject<void>();
     private destroy$ = new Subject<void>();
     private workspaceId: string | null = null;
@@ -30,7 +36,7 @@ export class DecisionListComponent implements OnInit, OnDestroy {
             this.decisions$ = this.refresh$.pipe(
                 startWith(undefined),
                 switchMap(() => this.decisionService.getDecisions(this.workspaceId!).pipe(
-                    catchError(err => {
+                    catchError(() => {
                         this.error = 'Failed to load decisions. Please try again.';
                         return of([]);
                     })
@@ -44,21 +50,39 @@ export class DecisionListComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
-    deleteDecision(id: string): void {
-        if (confirm('Are you sure you want to delete this decision?') && this.workspaceId) {
-            this.error = null;
-            this.decisionService.deleteDecision(this.workspaceId, id)
-                .pipe(takeUntil(this.destroy$))
-                .subscribe({
-                    next: () => {
-                        this.refresh$.next();
-                    },
-                    error: (err) => {
-                        console.error('Delete failed', err);
-                        this.error = 'Failed to delete decision. Please try again.';
-                    }
-                });
-        }
+    requestDeleteDecision(decision: Decision): void {
+        if (this.isDeletingDecision) return;
+        this.pendingDeleteDecision = decision;
+        this.deleteDecisionError = '';
+    }
+
+    cancelDeleteDecision(): void {
+        if (this.isDeletingDecision) return;
+        this.pendingDeleteDecision = null;
+        this.deleteDecisionError = '';
+    }
+
+    confirmDeleteDecision(): void {
+        const decision = this.pendingDeleteDecision;
+        if (!decision || !this.workspaceId || this.isDeletingDecision) return;
+
+        this.isDeletingDecision = true;
+        this.deleteDecisionError = '';
+
+        this.decisionService.deleteDecision(this.workspaceId, decision.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    this.pendingDeleteDecision = null;
+                    this.isDeletingDecision = false;
+                    this.error = null;
+                    this.refresh$.next();
+                },
+                error: () => {
+                    this.isDeletingDecision = false;
+                    this.deleteDecisionError = 'Unable to delete decision. Please try again.';
+                }
+            });
     }
 
     isOverdue(decision: Decision): boolean {

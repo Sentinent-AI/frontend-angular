@@ -66,8 +66,76 @@ describe('DecisionListComponent', () => {
     it('should have correct edit link', () => {
         const editButton = fixture.debugElement.query(By.css('.btn-secondary'));
         expect(editButton).toBeTruthy();
-        // Since it's a relative link [decision.id, 'edit'], we check if the attribute is present or just trust the binding
         const link = editButton.nativeElement as HTMLAnchorElement;
         expect(link.textContent).toContain('Edit');
+    });
+
+    // ── Delete modal flow ────────────────────────────────────────────────────
+
+    it('should not show delete modal by default', () => {
+        const backdrop = fixture.nativeElement.querySelector('.modal-backdrop');
+        expect(backdrop).toBeNull();
+    });
+
+    it('should open delete modal with decision title when requestDeleteDecision is called', () => {
+        component.requestDeleteDecision(mockDecisions[0]);
+        fixture.detectChanges();
+
+        const backdrop = fixture.nativeElement.querySelector('.modal-backdrop');
+        expect(backdrop).toBeTruthy();
+
+        const title = fixture.nativeElement.querySelector('.delete-modal-title');
+        expect(title.textContent).toContain('Test Decision');
+    });
+
+    it('should close modal and clear state when cancelDeleteDecision is called', () => {
+        component.requestDeleteDecision(mockDecisions[0]);
+        fixture.detectChanges();
+
+        component.cancelDeleteDecision();
+        fixture.detectChanges();
+
+        const backdrop = fixture.nativeElement.querySelector('.modal-backdrop');
+        expect(backdrop).toBeNull();
+        expect(component.pendingDeleteDecision).toBeNull();
+        expect(component.deleteDecisionError).toBe('');
+    });
+
+    it('should close modal when backdrop overlay is clicked', () => {
+        component.requestDeleteDecision(mockDecisions[0]);
+        fixture.detectChanges();
+
+        const backdrop = fixture.nativeElement.querySelector('.modal-backdrop') as HTMLElement;
+        backdrop.click();
+        fixture.detectChanges();
+
+        expect(component.pendingDeleteDecision).toBeNull();
+    });
+
+    it('should call deleteDecision service and close modal on confirmDeleteDecision', () => {
+        component.requestDeleteDecision(mockDecisions[0]);
+        fixture.detectChanges();
+
+        component.confirmDeleteDecision();
+        fixture.detectChanges();
+
+        expect(mockDecisionService.deleteDecision).toHaveBeenCalledWith('10', '1');
+        expect(component.pendingDeleteDecision).toBeNull();
+        expect(component.isDeletingDecision).toBeFalse();
+    });
+
+    it('should not open modal while a delete is already in progress', () => {
+        component.isDeletingDecision = true;
+        component.requestDeleteDecision(mockDecisions[0]);
+
+        expect(component.pendingDeleteDecision).toBeNull();
+    });
+
+    it('should not close modal while a delete is in progress', () => {
+        component.requestDeleteDecision(mockDecisions[0]);
+        component.isDeletingDecision = true;
+        component.cancelDeleteDecision();
+
+        expect(component.pendingDeleteDecision).toEqual(mockDecisions[0]);
     });
 });
