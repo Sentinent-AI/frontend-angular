@@ -4,29 +4,22 @@ import { AuthService } from '../../services/auth';
 import { WorkspaceService } from '../../services/workspace';
 import { Workspace } from '../../models/workspace';
 import { CommonModule } from '@angular/common';
-import { Signal, SignalFilters } from '../../models/signal.model';
-import { SignalService } from '../../services/signal.service';
-import { SignalBoardComponent } from '../signal-board/signal-board';
-import { SearchBarComponent } from '../search-bar/search-bar';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, SignalBoardComponent, SearchBarComponent],
+  imports: [CommonModule, RouterLink],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
 export class Dashboard implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private workspaceService = inject(WorkspaceService);
-  private signalService = inject(SignalService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
 
   workspaces: Workspace[] = [];
-  signals: Signal[] = [];
-  filters: SignalFilters = { source: 'all', status: 'all' };
   githubBanner = '';
   slackBanner = '';
   pendingDeleteWorkspace: Workspace | null = null;
@@ -58,8 +51,6 @@ export class Dashboard implements OnInit, OnDestroy {
           ? 'Slack connection failed. Please try the OAuth flow again.'
           : '';
     });
-
-    this.loadSignals();
   }
 
   ngOnDestroy(): void {
@@ -121,33 +112,8 @@ export class Dashboard implements OnInit, OnDestroy {
     this.router.navigate(['/login']);
   }
 
-  setSourceFilter(source: SignalFilters['source']): void {
-    this.filters = { ...this.filters, source };
-    this.loadSignals();
-  }
-
-  setStatusFilter(status: SignalFilters['status']): void {
-    this.filters = { ...this.filters, status };
-    this.loadSignals();
-  }
-
-  markSignalAsRead(signalId: string): void {
-    this.signalService.markAsRead(signalId).subscribe(() => this.loadSignals());
-  }
-
-  archiveSignal(signalId: string): void {
-    this.signalService.archive(signalId).subscribe(() => this.loadSignals());
-  }
-
   isWorkspacePendingDelete(workspace: Workspace): boolean {
     return this.pendingDeleteWorkspace?.id === workspace.id;
-  }
-
-  private loadSignals(): void {
-    this.signalService.getSignals(this.filters).subscribe(signals => {
-      this.signals = signals;
-      this.cdr.detectChanges();
-    });
   }
 
   private showDeleteSuccess(message: string): void {

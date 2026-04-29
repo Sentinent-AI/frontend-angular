@@ -5,11 +5,15 @@ import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { UserProfile, UserProfileUpdate } from '../../models/user-profile.model';
 import { UserProfileService } from '../../services/user-profile.service';
+import { Signal, SignalFilters } from '../../models/signal.model';
+import { SignalService } from '../../services/signal.service';
+import { SignalBoardComponent } from '../signal-board/signal-board';
+import { SearchBarComponent } from '../search-bar/search-bar';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, SignalBoardComponent, SearchBarComponent],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -17,6 +21,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private static readonly PROFILE_LOAD_TIMEOUT_MS = 8000;
 
   private readonly userProfileService = inject(UserProfileService);
+  private readonly signalService = inject(SignalService);
   private readonly cdr = inject(ChangeDetectorRef);
   private loadSubscription?: Subscription;
   private loadTimeoutId?: ReturnType<typeof setTimeout>;
@@ -36,8 +41,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
   errorMessage = '';
   successMessage = '';
 
+  signals: Signal[] = [];
+  signalFilters: SignalFilters = { source: 'all', status: 'all' };
+
   ngOnInit(): void {
     this.loadProfile();
+    this.loadSignals();
   }
 
   ngOnDestroy(): void {
@@ -124,6 +133,31 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   withFallback(value: string | undefined, fallback: string): string {
     return this.displayValue(value) || fallback;
+  }
+
+  setSourceFilter(source: SignalFilters['source']): void {
+    this.signalFilters = { ...this.signalFilters, source };
+    this.loadSignals();
+  }
+
+  setStatusFilter(status: SignalFilters['status']): void {
+    this.signalFilters = { ...this.signalFilters, status };
+    this.loadSignals();
+  }
+
+  markSignalAsRead(signalId: string): void {
+    this.signalService.markAsRead(signalId).subscribe(() => this.loadSignals());
+  }
+
+  archiveSignal(signalId: string): void {
+    this.signalService.archive(signalId).subscribe(() => this.loadSignals());
+  }
+
+  private loadSignals(): void {
+    this.signalService.getSignals(this.signalFilters).subscribe(signals => {
+      this.signals = signals;
+      this.syncView();
+    });
   }
 
   private loadProfile(): void {
