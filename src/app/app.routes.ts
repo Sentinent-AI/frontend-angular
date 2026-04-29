@@ -27,6 +27,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'integrations',
+    loadComponent: () => import('./components/integrations-page/integrations-page').then(m => m.IntegrationsPageComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'workspace/create',
     component: CreateWorkspace,
     canActivate: [authGuard]

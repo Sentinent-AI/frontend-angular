@@ -5,15 +5,12 @@ import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { UserProfile, UserProfileUpdate } from '../../models/user-profile.model';
 import { UserProfileService } from '../../services/user-profile.service';
-import { WorkspaceService } from '../../services/workspace';
-import { Workspace } from '../../models/workspace';
-import { WorkspaceIntegrationsComponent } from '../workspace-integrations/workspace-integrations';
 import { AppNavComponent } from '../app-nav/app-nav';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, WorkspaceIntegrationsComponent, AppNavComponent],
+  imports: [CommonModule, FormsModule, RouterLink, AppNavComponent],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -21,7 +18,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private static readonly PROFILE_LOAD_TIMEOUT_MS = 8000;
 
   private readonly userProfileService = inject(UserProfileService);
-  private readonly workspaceService = inject(WorkspaceService);
   private readonly cdr = inject(ChangeDetectorRef);
   private loadSubscription?: Subscription;
   private loadTimeoutId?: ReturnType<typeof setTimeout>;
@@ -41,29 +37,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
   errorMessage = '';
   successMessage = '';
 
-  workspaces: Workspace[] = [];
-  selectedWorkspaceId = '';
-
   ngOnInit(): void {
     this.loadProfile();
-    this.workspaceService.getWorkspaces().subscribe({
-      next: (ws) => {
-        this.workspaces = ws;
-        if (ws.length > 0) {
-          this.selectedWorkspaceId = String(ws[0].id);
-        }
-        this.cdr.detectChanges();
-      },
-      error: () => {}
-    });
   }
 
   ngOnDestroy(): void {
     this.clearActiveLoad();
-  }
-
-  selectWorkspace(id: string): void {
-    this.selectedWorkspaceId = id;
   }
 
   startEditing(): void {

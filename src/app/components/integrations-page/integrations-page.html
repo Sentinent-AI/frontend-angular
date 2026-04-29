@@ -1,0 +1,41 @@
+<app-nav></app-nav>
+
+<div class="integrations-page">
+
+  <div class="integrations-page-shell" *ngIf="isLoading">
+    <p class="loading-text">Loading workspaces...</p>
+  </div>
+
+  <div class="integrations-page-shell" *ngIf="!isLoading && workspaces.length === 0">
+    <div class="empty-state">
+      <h2>No workspace yet</h2>
+      <p>Create a workspace first to connect your tools.</p>
+      <a routerLink="/workspace/create" class="primary-btn">Create a workspace</a>
+    </div>
+  </div>
+
+  <div class="integrations-page-shell" *ngIf="!isLoading && workspaces.length > 0">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Workspace</p>
+        <h1>Integrations</h1>
+        <p class="intro">Connect Slack, GitHub, and Jira to pull your assigned work and team messages into the signals feed.</p>
+      </div>
+
+      <div class="workspace-selector" *ngIf="workspaces.length > 1">
+        <label class="workspace-selector-label" for="workspaceSelect">Workspace</label>
+        <select id="workspaceSelect" class="workspace-select" (change)="selectWorkspace($any($event.target).value)">
+          <option *ngFor="let ws of workspaces" [value]="ws.id" [selected]="ws.id.toString() === selectedWorkspaceId">
+            {{ ws.name }}
+          </option>
+        </select>
+      </div>
+    </header>
+
+    <app-workspace-integrations
+      *ngIf="selectedWorkspaceId"
+      [inputWorkspaceId]="selectedWorkspaceId"
+    />
+  </div>
+
+</div>

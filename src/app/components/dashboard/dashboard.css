@@ -21,7 +21,7 @@
   position: relative;
   z-index: 1;
   min-height: 100vh;
-  padding-top: 56px;
+  margin-left: 220px;
 }
 
 .hero {
@@ -565,6 +565,11 @@
 }
 
 @media (max-width: 768px) {
+  .dashboard-shell {
+    margin-left: 0;
+    padding-top: 56px;
+  }
+
   .hero,
   .content {
     padding-left: 18px;

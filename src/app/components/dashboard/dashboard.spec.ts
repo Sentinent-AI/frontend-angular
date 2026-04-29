@@ -112,7 +112,7 @@ describe('Dashboard', () => {
     });
 
     it('should call logout on button click', () => {
-        const button = fixture.nativeElement.querySelector('.nav-logout') as HTMLButtonElement;
+        const button = fixture.nativeElement.querySelector('.sidebar-logout') as HTMLButtonElement;
         button.click();
         expect(mockAuthService.logout).toHaveBeenCalled();
     });
