@@ -17,6 +17,10 @@
   padding: 42px 24px 64px;
 }
 
+:host > .profile-shell:first-of-type {
+  padding-top: calc(56px + 42px);
+}
+
 .profile-hero {
   display: flex;
   justify-content: space-between;
@@ -308,6 +312,75 @@
   margin-top: 2px;
 }
 
+/* ── Integrations section ─────────────────────────────────────── */
+
+.integrations-section,
+.integrations-empty {
+  margin-top: 48px;
+  padding-top: 40px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.integrations-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.integrations-heading {
+  margin: 4px 0 8px;
+  font-size: 32px;
+  color: #f5f5f5;
+  letter-spacing: -0.02em;
+}
+
+.integrations-intro {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.55);
+  max-width: 540px;
+  line-height: 1.6;
+}
+
+.workspace-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.workspace-selector-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.workspace-select {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f5f5;
+  padding: 10px 36px 10px 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ffffff' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.workspace-select:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+
 @media (max-width: 860px) {
   .profile-hero,
   .profile-layout,
@@ -319,5 +392,13 @@
 
   .hero-actions {
     justify-content: flex-start;
+  }
+
+  .integrations-section-header {
+    flex-direction: column;
+  }
+
+  .workspace-select {
+    width: 100%;
   }
 }

@@ -4,11 +4,12 @@ import { ActivatedRoute, RouterModule, RouterLink, RouterOutlet } from '@angular
 import { WorkspaceService } from '../../../services/workspace';
 import { Workspace } from '../../../models/workspace';
 import { Observable } from 'rxjs';
+import { AppNavComponent } from '../../app-nav/app-nav';
 
 @Component({
   selector: 'app-workspace-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, RouterLink, RouterOutlet],
+  imports: [CommonModule, RouterModule, RouterLink, RouterOutlet, AppNavComponent],
   templateUrl: './workspace-details.html',
   styleUrls: ['./workspace-details.css']
 })

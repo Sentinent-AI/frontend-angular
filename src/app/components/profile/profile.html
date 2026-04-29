@@ -1,15 +1,17 @@
+<app-nav></app-nav>
+
 <section class="profile-shell" *ngIf="isLoading">
   <article class="profile-card loading-card">
     <p class="section-kicker">Loading</p>
     <h2>Loading your profile...</h2>
-    <p class="bio-copy">We’re pulling your account details from Sentinent now.</p>
+    <p class="bio-copy">We're pulling your account details from Sentinent now.</p>
   </article>
 </section>
 
 <section class="profile-shell" *ngIf="!isLoading && !profile">
   <article class="profile-card loading-card">
     <p class="section-kicker">Profile unavailable</p>
-    <h2>We couldn’t load this profile yet.</h2>
+    <h2>We couldn't load this profile yet.</h2>
     <p class="bio-copy">{{ errorMessage || 'Try refreshing after the backend is running with the new profile API.' }}</p>
     <div class="hero-actions">
       <button type="button" class="primary-btn" (click)="retryLoadingProfile()">Try again</button>
@@ -32,7 +34,6 @@
     </div>
 
     <div class="hero-actions">
-      <a routerLink="/dashboard" class="secondary-btn">Back to dashboard</a>
       <button *ngIf="!isEditing" type="button" class="primary-btn" (click)="startEditing()">Edit profile</button>
       <button *ngIf="isEditing" type="button" class="secondary-btn" (click)="cancelEditing()">Cancel</button>
     </div>
@@ -166,4 +167,36 @@
       </article>
     </div>
   </section>
+
+  <!-- Integrations section -->
+  <section class="integrations-section" *ngIf="workspaces.length > 0">
+    <div class="integrations-section-header">
+      <div>
+        <p class="section-kicker">Connected accounts</p>
+        <h2 class="integrations-heading">Integrations</h2>
+        <p class="integrations-intro">Connect Slack, GitHub, and Jira to pull your assigned work and team messages into the signals feed.</p>
+      </div>
+
+      <div class="workspace-selector" *ngIf="workspaces.length > 1">
+        <label class="workspace-selector-label" for="workspaceSelect">Workspace</label>
+        <select id="workspaceSelect" class="workspace-select" (change)="selectWorkspace($any($event.target).value)">
+          <option *ngFor="let ws of workspaces" [value]="ws.id" [selected]="ws.id.toString() === selectedWorkspaceId">
+            {{ ws.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <app-workspace-integrations
+      *ngIf="selectedWorkspaceId"
+      [inputWorkspaceId]="selectedWorkspaceId"
+    />
+  </section>
+
+  <div class="integrations-empty" *ngIf="workspaces.length === 0">
+    <p class="section-kicker">Connected accounts</p>
+    <h2 class="integrations-heading">Integrations</h2>
+    <p class="integrations-intro">Create a workspace first to set up your Slack, GitHub, and Jira connections.</p>
+    <a routerLink="/workspace/create" class="primary-btn">Create a workspace</a>
+  </div>
 </section>

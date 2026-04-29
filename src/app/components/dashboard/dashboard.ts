@@ -1,6 +1,5 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../services/auth';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { WorkspaceService } from '../../services/workspace';
 import { Workspace } from '../../models/workspace';
 import { CommonModule } from '@angular/common';
@@ -8,24 +7,27 @@ import { Signal, SignalFilters } from '../../models/signal.model';
 import { SignalService } from '../../services/signal.service';
 import { SignalBoardComponent } from '../signal-board/signal-board';
 import { SearchBarComponent } from '../search-bar/search-bar';
+import { AppNavComponent } from '../app-nav/app-nav';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, SignalBoardComponent, SearchBarComponent],
+  imports: [CommonModule, RouterLink, SignalBoardComponent, SearchBarComponent, AppNavComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
 export class Dashboard implements OnInit, OnDestroy {
-  private authService = inject(AuthService);
   private workspaceService = inject(WorkspaceService);
   private signalService = inject(SignalService);
-  private router = inject(Router);
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
 
   workspaces: Workspace[] = [];
-  signals: Signal[] = [];
+  allSignals: Signal[] = [];       // full list, only filtered by status
+  signals: Signal[] = [];          // allSignals filtered by active source tab
+  unreadByWorkspace: Record<number, number> = {};
+  sourceTab: 'all' | 'slack' | 'github' | 'jira' = 'all';
+  showUnreadOnly = false;
   filters: SignalFilters = { source: 'all', status: 'all' };
   githubBanner = '';
   slackBanner = '';
@@ -70,26 +72,20 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   requestDeleteWorkspace(workspace: Workspace): void {
-    if (this.isDeletingWorkspace) {
-      return;
-    }
+    if (this.isDeletingWorkspace) return;
     this.pendingDeleteWorkspace = workspace;
     this.deleteWorkspaceError = '';
   }
 
   cancelDeleteWorkspace(): void {
-    if (this.isDeletingWorkspace) {
-      return;
-    }
+    if (this.isDeletingWorkspace) return;
     this.pendingDeleteWorkspace = null;
     this.deleteWorkspaceError = '';
   }
 
   confirmDeleteWorkspace(): void {
     const workspace = this.pendingDeleteWorkspace;
-    if (!workspace || this.isDeletingWorkspace) {
-      return;
-    }
+    if (!workspace || this.isDeletingWorkspace) return;
 
     this.isDeletingWorkspace = true;
     this.deleteWorkspaceError = '';
@@ -101,7 +97,6 @@ export class Dashboard implements OnInit, OnDestroy {
           this.deleteWorkspaceError = 'Unable to delete workspace. Please try again.';
           return;
         }
-
         this.workspaces = this.workspaces.filter(ws => ws.id !== workspace.id);
         this.pendingDeleteWorkspace = null;
         this.isDeletingWorkspace = false;
@@ -116,19 +111,19 @@ export class Dashboard implements OnInit, OnDestroy {
     });
   }
 
-  logout() {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+  setSourceTab(tab: typeof this.sourceTab): void {
+    this.sourceTab = tab;
+    this.applyFilters();
   }
 
-  setSourceFilter(source: SignalFilters['source']): void {
-    this.filters = { ...this.filters, source };
+  toggleUnreadOnly(): void {
+    this.showUnreadOnly = !this.showUnreadOnly;
+    this.filters = { ...this.filters, status: this.showUnreadOnly ? 'unread' : 'all' };
     this.loadSignals();
   }
 
-  setStatusFilter(status: SignalFilters['status']): void {
-    this.filters = { ...this.filters, status };
-    this.loadSignals();
+  countFor(source: 'slack' | 'github' | 'jira'): number {
+    return this.allSignals.filter(s => s.sourceType === source).length;
   }
 
   markSignalAsRead(signalId: string): void {
@@ -143,18 +138,36 @@ export class Dashboard implements OnInit, OnDestroy {
     return this.pendingDeleteWorkspace?.id === workspace.id;
   }
 
+  unreadCountFor(workspaceId: number): number {
+    return this.unreadByWorkspace[workspaceId] ?? 0;
+  }
+
   private loadSignals(): void {
-    this.signalService.getSignals(this.filters).subscribe(signals => {
-      this.signals = signals;
+    // Always fetch with status filter only; source filtering is done client-side
+    const fetchFilter: SignalFilters = { source: 'all', status: this.filters.status };
+    this.signalService.getSignals(fetchFilter).subscribe(signals => {
+      this.allSignals = signals;
+      this.unreadByWorkspace = signals.reduce<Record<number, number>>((acc, s) => {
+        if (s.status === 'unread' && s.workspaceId != null) {
+          acc[s.workspaceId] = (acc[s.workspaceId] ?? 0) + 1;
+        }
+        return acc;
+      }, {});
+      this.applyFilters();
       this.cdr.detectChanges();
     });
   }
 
+  private applyFilters(): void {
+    this.signals = this.sourceTab === 'all'
+      ? this.allSignals
+      : this.allSignals.filter(s => s.sourceType === this.sourceTab);
+    this.cdr.detectChanges();
+  }
+
   private showDeleteSuccess(message: string): void {
     this.deleteWorkspaceSuccess = message;
-    if (this.deleteNoticeTimeoutId !== undefined) {
-      clearTimeout(this.deleteNoticeTimeoutId);
-    }
+    if (this.deleteNoticeTimeoutId !== undefined) clearTimeout(this.deleteNoticeTimeoutId);
     this.deleteNoticeTimeoutId = setTimeout(() => {
       this.deleteWorkspaceSuccess = '';
     }, 2600);

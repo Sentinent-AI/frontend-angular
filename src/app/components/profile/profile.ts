@@ -5,11 +5,15 @@ import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { UserProfile, UserProfileUpdate } from '../../models/user-profile.model';
 import { UserProfileService } from '../../services/user-profile.service';
+import { WorkspaceService } from '../../services/workspace';
+import { Workspace } from '../../models/workspace';
+import { WorkspaceIntegrationsComponent } from '../workspace-integrations/workspace-integrations';
+import { AppNavComponent } from '../app-nav/app-nav';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, WorkspaceIntegrationsComponent, AppNavComponent],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -17,6 +21,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private static readonly PROFILE_LOAD_TIMEOUT_MS = 8000;
 
   private readonly userProfileService = inject(UserProfileService);
+  private readonly workspaceService = inject(WorkspaceService);
   private readonly cdr = inject(ChangeDetectorRef);
   private loadSubscription?: Subscription;
   private loadTimeoutId?: ReturnType<typeof setTimeout>;
@@ -36,18 +41,33 @@ export class ProfileComponent implements OnInit, OnDestroy {
   errorMessage = '';
   successMessage = '';
 
+  workspaces: Workspace[] = [];
+  selectedWorkspaceId = '';
+
   ngOnInit(): void {
     this.loadProfile();
+    this.workspaceService.getWorkspaces().subscribe({
+      next: (ws) => {
+        this.workspaces = ws;
+        if (ws.length > 0) {
+          this.selectedWorkspaceId = String(ws[0].id);
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
   }
 
   ngOnDestroy(): void {
     this.clearActiveLoad();
   }
 
+  selectWorkspace(id: string): void {
+    this.selectedWorkspaceId = id;
+  }
+
   startEditing(): void {
-    if (!this.profile) {
-      return;
-    }
+    if (!this.profile) return;
     this.isEditing = true;
     this.errorMessage = '';
     this.successMessage = '';
@@ -58,9 +78,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.isEditing = false;
     this.errorMessage = '';
     this.successMessage = '';
-    if (this.profile) {
-      this.draft = this.toDraft(this.profile);
-    }
+    if (this.profile) this.draft = this.toDraft(this.profile);
   }
 
   saveProfile(): void {
@@ -102,14 +120,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   displayName(): string {
     const resolvedName = this.displayValue(this.profile?.fullName);
-    if (resolvedName) {
-      return resolvedName;
-    }
+    if (resolvedName) return resolvedName;
 
     const emailName = this.displayValue(this.profile?.email)?.split('@')[0] ?? '';
-    if (!emailName) {
-      return 'Sentinent User';
-    }
+    if (!emailName) return 'Sentinent User';
 
     return emailName
       .split(/[^a-zA-Z0-9]+/)
@@ -165,9 +179,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   private clearLoadTimeout(): void {
-    if (this.loadTimeoutId === undefined) {
-      return;
-    }
+    if (this.loadTimeoutId === undefined) return;
     clearTimeout(this.loadTimeoutId);
     this.loadTimeoutId = undefined;
   }
