@@ -217,4 +217,137 @@ describe('WorkspaceIntegrationsComponent', () => {
     expect(mockIntegrationService.syncJira).toHaveBeenCalledWith('workspace-1');
     expect(component.jiraFeedbackMessage).toContain('started');
   });
+
+  // --- Repo edit/save UX tests ---
+
+  it('should start in summary view (not editing) when repos are already saved', () => {
+    // Default mock has one repo with isConnected: true
+    expect(component.isEditingRepos).toBeFalse();
+  });
+
+  it('should start in edit mode when connected but no repos are saved', () => {
+    mockIntegrationService.getGitHubRepos.and.returnValue(of({
+      connected: true,
+      accountName: 'Sentinent Engineering',
+      accountHandle: '@sentinent-dev',
+      repos: [
+        { id: 2, name: 'backend-go', fullName: 'Sentinent-AI/backend-go', isConnected: false }
+      ],
+      lastSyncAt: undefined
+    }));
+
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    expect(component.isEditingRepos).toBeTrue();
+  });
+
+  it('hasSavedRepos returns true when at least one repo is connected', () => {
+    // Default mock has one repo with isConnected: true
+    expect(component.hasSavedRepos).toBeTrue();
+  });
+
+  it('hasSavedRepos returns false when no repos are connected', () => {
+    mockIntegrationService.getGitHubRepos.and.returnValue(of({
+      connected: true,
+      accountName: 'Sentinent Engineering',
+      accountHandle: '@sentinent-dev',
+      repos: [
+        { id: 2, name: 'backend-go', fullName: 'Sentinent-AI/backend-go', isConnected: false }
+      ],
+      lastSyncAt: undefined
+    }));
+
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    expect(component.hasSavedRepos).toBeFalse();
+  });
+
+  it('editRepos() switches to edit mode', () => {
+    expect(component.isEditingRepos).toBeFalse();
+
+    component.editRepos();
+
+    expect(component.isEditingRepos).toBeTrue();
+  });
+
+  it('cancelEditRepos() exits edit mode and resets checkboxes to last saved state', () => {
+    // Start in edit mode
+    component.editRepos();
+    expect(component.isEditingRepos).toBeTrue();
+
+    // Change selection
+    component.toggleRepo(1, false);
+    expect(component.selectedRepoIds).not.toContain(1);
+
+    // Cancel — should restore isConnected repos from component.repos
+    component.cancelEditRepos();
+
+    expect(component.isEditingRepos).toBeFalse();
+    expect(component.selectedRepoIds).toContain(1);
+  });
+
+  it('saveRepoSelection() exits edit mode on success', () => {
+    component.editRepos();
+    expect(component.isEditingRepos).toBeTrue();
+
+    component.saveRepoSelection();
+    fixture.detectChanges();
+
+    expect(mockIntegrationService.updateGitHubRepos).toHaveBeenCalledWith('workspace-1', [1]);
+    expect(component.isEditingRepos).toBeFalse();
+    expect(component.githubFeedbackMessage).toContain('saved');
+  });
+
+  it('saveRepoSelection() stays in edit mode and shows error on failure', () => {
+    const { throwError } = require('rxjs');
+    mockIntegrationService.updateGitHubRepos.and.returnValue(
+      throwError(() => new Error('Network error'))
+    );
+
+    component.editRepos();
+    component.saveRepoSelection();
+    fixture.detectChanges();
+
+    expect(component.isGitHubSaving).toBeFalse();
+    expect(component.githubErrorMessage).toContain('Could not save');
+  });
+
+  it('saveRepoSelection() always clears the loading spinner via finalize', () => {
+    component.editRepos();
+    component.isGitHubSaving = true;
+
+    component.saveRepoSelection();
+    fixture.detectChanges();
+
+    expect(component.isGitHubSaving).toBeFalse();
+  });
+
+  it('summary view renders only connected repos with Active badge', () => {
+    // isEditingRepos is false by default (repos saved)
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const activeTag = compiled.querySelector('.repo-tag');
+    expect(activeTag).not.toBeNull();
+    expect(activeTag?.textContent?.trim()).toBe('Active');
+
+    // No checkboxes in summary view
+    const checkboxes = compiled.querySelectorAll('input[type="checkbox"]');
+    expect(checkboxes.length).toBe(0);
+  });
+
+  it('edit view renders checkboxes and Save Selection button', () => {
+    component.editRepos();
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const checkboxes = compiled.querySelectorAll('input[type="checkbox"]');
+    expect(checkboxes.length).toBeGreaterThan(0);
+
+    const saveBtn = Array.from(compiled.querySelectorAll('button'))
+      .find(b => b.textContent?.includes('Save Selection'));
+    expect(saveBtn).not.toBeNull();
+  });
 });

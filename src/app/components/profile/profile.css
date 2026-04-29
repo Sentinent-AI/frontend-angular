@@ -11,14 +11,15 @@
   box-sizing: border-box;
 }
 
-.profile-shell {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 42px 24px 64px;
+.profile-page {
+  margin-left: 220px;
+  min-height: 100vh;
 }
 
-:host > .profile-shell:first-of-type {
-  padding-top: calc(56px + 42px);
+.profile-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 42px 24px 64px;
 }
 
 .profile-hero {

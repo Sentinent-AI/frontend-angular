@@ -2,40 +2,44 @@
   display: block;
 }
 
-.app-nav {
+/* ── Sidebar shell ───────────────────────────────────────── */
+
+.sidebar {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
+  bottom: 0;
+  width: 220px;
   z-index: 100;
-  height: 56px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28px;
-  background: rgba(5, 5, 5, 0.88);
+  flex-direction: column;
+  padding: 20px 12px;
+  background: rgba(5, 5, 5, 0.94);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 /* ── Brand ───────────────────────────────────────────────── */
 
-.nav-brand {
+.sidebar-brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   text-decoration: none;
   color: #f7f7f7;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.02em;
+  padding: 6px 8px;
+  margin-bottom: 28px;
+  flex-shrink: 0;
 }
 
-.nav-brand-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+.sidebar-brand-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
   background: #f7f7f7;
   color: #050505;
   display: grid;
@@ -43,41 +47,56 @@
   flex-shrink: 0;
 }
 
-/* ── Links ───────────────────────────────────────────────── */
+/* ── Nav links ───────────────────────────────────────────── */
 
-.nav-links {
+.sidebar-links {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
 }
 
-.nav-link {
+.sidebar-link {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 10px;
   text-decoration: none;
-  color: rgba(247, 247, 247, 0.65);
+  color: rgba(247, 247, 247, 0.55);
   font-size: 14px;
   font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 9px 10px;
+  border-radius: 9px;
   transition: color 0.15s ease, background 0.15s ease;
 }
 
-.nav-link:hover {
+.sidebar-link svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.sidebar-link:hover {
   color: #f7f7f7;
   background: rgba(255, 255, 255, 0.07);
 }
 
-.nav-link.active {
+.sidebar-link:hover svg {
+  opacity: 1;
+}
+
+.sidebar-link.active {
   color: #f7f7f7;
   background: rgba(255, 255, 255, 0.1);
 }
 
+.sidebar-link.active svg {
+  opacity: 1;
+}
+
 /* ── Unread badge ────────────────────────────────────────── */
 
-.nav-badge {
+.sidebar-badge {
+  margin-left: auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -94,21 +113,34 @@
 
 /* ── Logout ──────────────────────────────────────────────── */
 
-.nav-logout {
-  border: 1px solid rgba(255, 255, 255, 0.18);
+.sidebar-logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
   background: transparent;
-  color: rgba(247, 247, 247, 0.65);
-  border-radius: 8px;
-  padding: 6px 12px;
+  color: rgba(247, 247, 247, 0.45);
   font-size: 14px;
   font-weight: 600;
+  padding: 9px 10px;
+  border-radius: 9px;
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-  margin-left: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+  text-align: left;
 }
 
-.nav-logout:hover {
+.sidebar-logout svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.sidebar-logout:hover {
   color: #f7f7f7;
   background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.sidebar-logout:hover svg {
+  opacity: 1;
 }
