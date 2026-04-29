@@ -168,7 +168,8 @@
 }
 
 .jira-comment-section,
-.github-comment-section {
+.github-comment-section,
+.slack-comment-section {
   display: flex;
   gap: 0.5rem;
   width: 100%;
@@ -176,7 +177,8 @@
 }
 
 .jira-comment-section input,
-.github-comment-section input {
+.github-comment-section input,
+.slack-comment-section input {
   flex: 1;
   border: 1px solid #cbd5e1;
   border-radius: 999px;
@@ -187,7 +189,8 @@
 }
 
 .jira-comment-section input:focus,
-.github-comment-section input:focus {
+.github-comment-section input:focus,
+.slack-comment-section input:focus {
   border-color: #6366f1;
 }
 

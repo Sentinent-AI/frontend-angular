@@ -198,4 +198,31 @@ export class SignalBoardComponent {
       }
     });
   }
+
+  slackReplies: { [signalId: string]: string } = {};
+  submittingSlackReply: { [signalId: string]: boolean } = {};
+
+  sendSlackReply(signal: Signal) {
+    const workspaceId = String(signal.workspaceId ?? '');
+    const channelId = String(signal.metadata['channel_id'] || signal.sourceId.split(':')[0]);
+    const threadTs = String(signal.metadata['ts'] || signal.externalId);
+    const text = this.slackReplies[signal.id];
+
+    if (!text || !text.trim() || !channelId || !threadTs) return;
+
+    this.submittingSlackReply[signal.id] = true;
+    this.integrationService.replyToSlack(workspaceId, channelId, threadTs, text).subscribe({
+      next: () => {
+        this.showToast('Reply sent to Slack thread');
+        this.slackReplies[signal.id] = '';
+        this.submittingSlackReply[signal.id] = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.showToast('Failed to send Slack reply');
+        this.submittingSlackReply[signal.id] = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
 }

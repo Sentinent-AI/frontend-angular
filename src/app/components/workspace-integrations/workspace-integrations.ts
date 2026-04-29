@@ -24,9 +24,11 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   slackWorkspaceName = '';
   slackWorkspaceUrl = '';
   slackLastSyncAt?: Date;
+  slackSyncStatus?: SyncStatus;
   slackFeedbackMessage = '';
   slackErrorMessage = '';
   isSlackSaving = false;
+  isSlackSyncing = false;
 
   repos: GitHubRepo[] = [];
   selectedRepoIds: number[] = [];
@@ -178,10 +180,30 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
         this.isSlackSaving = false;
         this.slackFeedbackMessage = 'Slack channel selection saved.';
         this.loadSlackChannels();
+        this.syncSlackNow(); // Trigger sync after saving selection
       },
       error: () => {
         this.isSlackSaving = false;
         this.slackErrorMessage = 'Could not save Slack channel selection.';
+      }
+    });
+  }
+
+  syncSlackNow(): void {
+    this.isSlackSyncing = true;
+    this.slackErrorMessage = '';
+    this.integrationService.syncSlack(this.workspaceId).subscribe({
+      next: (status) => {
+        this.slackSyncStatus = status;
+        this.isSlackSyncing = false;
+        this.slackFeedbackMessage = status.status === 'in_progress'
+          ? 'Slack sync started. Messages will refresh shortly.'
+          : 'Slack sync could not be started.';
+        this.loadSlackChannels();
+      },
+      error: (error: Error) => {
+        this.isSlackSyncing = false;
+        this.slackErrorMessage = error.message;
       }
     });
   }

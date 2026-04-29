@@ -55,6 +55,11 @@
         <button type="button" class="ghost-btn" [disabled]="submittingGitHubComment[signal.id] || !githubComments[signal.id]" (click)="addGitHubComment(signal)">Comment</button>
       </div>
 
+      <div class="slack-comment-section" *ngIf="signal.sourceType === 'slack'">
+        <input type="text" placeholder="Reply to thread..." [(ngModel)]="slackReplies[signal.id]" [disabled]="submittingSlackReply[signal.id]">
+        <button type="button" class="ghost-btn" [disabled]="submittingSlackReply[signal.id] || !slackReplies[signal.id]" (click)="sendSlackReply(signal)">Reply</button>
+      </div>
+
       <div class="action-buttons-group">
         <a class="link-btn" *ngIf="signal.url" [href]="signal.url" target="_blank" rel="noreferrer">{{ getOpenLabel(signal) }}</a>
         <button type="button" class="ghost-btn" *ngIf="signal.sourceType === 'github'" (click)="toggleGitHubState(signal)">

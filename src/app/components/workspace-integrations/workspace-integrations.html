@@ -26,6 +26,9 @@
     <div class="card-actions">
       <button *ngIf="!isSlackConnected" type="button" class="primary-btn slack-btn" (click)="connectSlack()">Connect Slack</button>
       <button *ngIf="isSlackConnected" type="button" class="secondary-btn" (click)="disconnectSlack()">Disconnect</button>
+      <button *ngIf="isSlackConnected" type="button" class="primary-btn slack-btn" [disabled]="isSlackSyncing" (click)="syncSlackNow()">
+        {{ isSlackSyncing ? 'Syncing...' : 'Sync Now' }}
+      </button>
     </div>
   </article>
 
@@ -60,8 +63,12 @@
 
   <section class="sync-card" *ngIf="isSlackConnected">
     <h3>Slack sync status</h3>
-    <p *ngIf="slackLastSyncAt">Last channel update: {{ slackLastSyncAt | date: 'medium' }}</p>
+    <p *ngIf="slackLastSyncAt">Last sync: {{ slackLastSyncAt | date: 'medium' }}</p>
     <p *ngIf="!slackLastSyncAt">No Slack sync has run yet.</p>
+    <p *ngIf="slackSyncStatus">
+      Current status:
+      <strong>{{ slackSyncStatus.status }}</strong>
+    </p>
   </section>
 
   <article class="integration-card">
