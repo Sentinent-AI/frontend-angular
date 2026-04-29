@@ -138,8 +138,8 @@ export class Dashboard implements OnInit, OnDestroy {
     return this.pendingDeleteWorkspace?.id === workspace.id;
   }
 
-  unreadCountFor(workspaceId: number): number {
-    return this.unreadByWorkspace[workspaceId] ?? 0;
+  unreadCountFor(workspaceId: string): number {
+    return this.unreadByWorkspace[Number(workspaceId)] ?? 0;
   }
 
   private loadSignals(): void {
