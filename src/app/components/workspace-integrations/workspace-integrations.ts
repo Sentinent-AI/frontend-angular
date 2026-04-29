@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { Component, Input, NgZone, OnInit, OnDestroy, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { finalize } from 'rxjs';
 import { IntegrationService } from '../../services/integration.service';
@@ -20,6 +20,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
 
   private readonly route = inject(ActivatedRoute);
   private readonly integrationService = inject(IntegrationService);
+  private readonly ngZone = inject(NgZone);
 
   workspaceId = '';
   slackChannels: SlackChannel[] = [];
@@ -83,12 +84,15 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
   }
 
   private onWindowFocus = (): void => {
-    // Always reload integrations when the tab regains focus so that OAuth
-    // connections completed in another tab/window are picked up immediately.
-    this.slackFeedbackMessage = this.slackFeedbackMessage === 'Starting Slack connection...' ? '' : this.slackFeedbackMessage;
-    this.githubFeedbackMessage = this.githubFeedbackMessage === 'Starting GitHub connection...' ? '' : this.githubFeedbackMessage;
-    this.jiraFeedbackMessage = this.jiraFeedbackMessage === 'Starting Jira connection...' ? '' : this.jiraFeedbackMessage;
-    this.loadAllIntegrations();
+    // window events fire outside Angular's zone, so we must re-enter the zone
+    // to trigger change detection immediately (clears the "Starting..." banner
+    // and shows the newly-connected integration without needing a button click).
+    this.ngZone.run(() => {
+      this.slackFeedbackMessage = this.slackFeedbackMessage === 'Starting Slack connection...' ? '' : this.slackFeedbackMessage;
+      this.githubFeedbackMessage = this.githubFeedbackMessage === 'Starting GitHub connection...' ? '' : this.githubFeedbackMessage;
+      this.jiraFeedbackMessage = this.jiraFeedbackMessage === 'Starting Jira connection...' ? '' : this.jiraFeedbackMessage;
+      this.loadAllIntegrations();
+    });
   };
 
   private loadAllIntegrations(): void {
