@@ -132,26 +132,111 @@
 }
 
 .signals-header {
+  display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 20px;
+  gap: 0;
+  margin-bottom: 0;
 }
 
-.title-group {
+.signals-title-row {
   display: flex;
   align-items: center;
-  gap: 24px;
-  width: 100%;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.signals-title-row h2 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.signals-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .signals-search {
   flex: 1;
-  max-width: 400px;
+  max-width: 380px;
 }
 
-.section-copy {
-  margin: -10px 0 18px;
-  color: #4a5568;
+.unread-toggle {
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: transparent;
+  color: #555;
+  border-radius: 8px;
+  padding: 7px 13px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.unread-toggle:hover {
+  background: #f0f0f0;
+  color: #111;
+}
+
+.unread-toggle.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* ── Source tabs ─────────────────────────────────────────── */
+
+.signal-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+  margin-bottom: 28px;
+}
+
+.signal-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.signal-tab:hover {
+  color: #111;
+}
+
+.signal-tab.active {
+  color: #111;
+  border-bottom-color: #111;
+}
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.07);
+  color: #444;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.signal-tab.active .tab-count {
+  background: #111;
+  color: #fff;
 }
 
 .create-btn {
