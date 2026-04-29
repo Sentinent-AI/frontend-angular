@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
+import { catchError, map, Observable, of, switchMap, throwError, timeout } from 'rxjs';
 import { GitHubConnectionState, GitHubRepo, SyncStatus } from '../models/github-integration.model';
 import { SlackConnectionState } from '../models/slack-integration.model';
 import { toError } from './http-error';
@@ -100,8 +100,10 @@ export class IntegrationService {
   updateSlackChannels(workspaceId: string, channelIds: string[]): Observable<void> {
     const params = new HttpParams().set('workspace_id', workspaceId);
     return this.http
-      .patch<void>(`${this.apiUrl}/slack/channels`, { channel_ids: channelIds }, { params })
+      .patch(`${this.apiUrl}/slack/channels`, { channel_ids: channelIds }, { params, responseType: 'text' })
       .pipe(
+        timeout(15000),
+        map(() => undefined as void),
         catchError((error) => throwError(() => toError(error, 'Unable to save Slack channel selection.'))),
       );
   }
@@ -189,7 +191,16 @@ export class IntegrationService {
 
   updateGitHubRepos(workspaceId: string, repoIds: number[]): Observable<void> {
     const params = new HttpParams().set('workspace_id', workspaceId);
-    return this.http.patch<void>(`${this.apiUrl}/github/repos`, { repo_ids: repoIds }, { params }).pipe(
+    // Use responseType: 'text' so Angular does not try to JSON-parse an empty
+    // 204 No Content body, which throws a SyntaxError in some Angular versions.
+    // The 15 s timeout ensures finalize() always fires even if the backend hangs.
+    return this.http.patch(
+      `${this.apiUrl}/github/repos`,
+      { repo_ids: repoIds },
+      { params, responseType: 'text' }
+    ).pipe(
+      timeout(15000),
+      map(() => undefined as void),
       catchError((error) => throwError(() => toError(error, 'Unable to save repository selection.'))),
     );
   }

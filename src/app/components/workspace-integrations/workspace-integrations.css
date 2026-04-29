@@ -166,6 +166,41 @@
   color: #64748b;
 }
 
+.section-head-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.repo-item--readonly {
+  cursor: default;
+}
+
+.repo-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.repo-status-dot.active {
+  background: #16a34a;
+}
+
+.repo-tag {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #16a34a;
+  background: #dcfce7;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  white-space: nowrap;
+}
+
 @media (max-width: 720px) {
   .integrations-header,
   .integration-card,

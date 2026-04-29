@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, NgZone, OnInit, OnDestroy, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { finalize } from 'rxjs';
 import { IntegrationService } from '../../services/integration.service';
@@ -20,6 +20,8 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
 
   private readonly route = inject(ActivatedRoute);
   private readonly integrationService = inject(IntegrationService);
+  private readonly ngZone = inject(NgZone);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   workspaceId = '';
   slackChannels: SlackChannel[] = [];
@@ -37,6 +39,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
   repos: GitHubRepo[] = [];
   selectedRepoIds: number[] = [];
   isGitHubConnected = false;
+  isEditingRepos = false;
   accountName = '';
   accountHandle = '';
   githubLastSyncAt?: Date;
@@ -83,12 +86,15 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
   }
 
   private onWindowFocus = (): void => {
-    // Always reload integrations when the tab regains focus so that OAuth
-    // connections completed in another tab/window are picked up immediately.
-    this.slackFeedbackMessage = this.slackFeedbackMessage === 'Starting Slack connection...' ? '' : this.slackFeedbackMessage;
-    this.githubFeedbackMessage = this.githubFeedbackMessage === 'Starting GitHub connection...' ? '' : this.githubFeedbackMessage;
-    this.jiraFeedbackMessage = this.jiraFeedbackMessage === 'Starting Jira connection...' ? '' : this.jiraFeedbackMessage;
-    this.loadAllIntegrations();
+    // window events fire outside Angular's zone, so we must re-enter the zone
+    // to trigger change detection immediately (clears the "Starting..." banner
+    // and shows the newly-connected integration without needing a button click).
+    this.ngZone.run(() => {
+      this.slackFeedbackMessage = this.slackFeedbackMessage === 'Starting Slack connection...' ? '' : this.slackFeedbackMessage;
+      this.githubFeedbackMessage = this.githubFeedbackMessage === 'Starting GitHub connection...' ? '' : this.githubFeedbackMessage;
+      this.jiraFeedbackMessage = this.jiraFeedbackMessage === 'Starting Jira connection...' ? '' : this.jiraFeedbackMessage;
+      this.loadAllIntegrations();
+    });
   };
 
   private loadAllIntegrations(): void {
@@ -122,6 +128,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
   disconnectSlack(): void {
     this.integrationService.disconnectSlack(this.workspaceId).subscribe(() => {
       this.slackFeedbackMessage = 'Slack integration disconnected.';
+      this.cdr.detectChanges();
       this.loadSlackChannels();
     });
   }
@@ -150,6 +157,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
     this.integrationService.disconnectGitHub(this.workspaceId).subscribe(() => {
       this.githubSyncStatus = undefined;
       this.githubFeedbackMessage = 'GitHub integration disconnected.';
+      this.cdr.detectChanges();
       this.loadRepos();
     });
   }
@@ -179,10 +187,12 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
       next: () => {
         this.jiraSyncStatus = undefined;
         this.jiraFeedbackMessage = 'Jira integration disconnected.';
+        this.cdr.detectChanges();
         this.loadJira();
       },
       error: (error: Error) => {
         this.jiraErrorMessage = error.message;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -213,15 +223,17 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
     this.isSlackSaving = true;
     this.slackErrorMessage = '';
     this.integrationService.updateSlackChannels(this.workspaceId, this.selectedSlackChannelIds).pipe(
-      finalize(() => { this.isSlackSaving = false; })
+      finalize(() => { this.isSlackSaving = false; this.cdr.detectChanges(); })
     ).subscribe({
       next: () => {
         this.slackFeedbackMessage = 'Slack channel selection saved.';
+        this.cdr.detectChanges();
         this.loadSlackChannels();
         this.syncSlackNow();
       },
       error: () => {
         this.slackErrorMessage = 'Could not save Slack channel selection.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -236,27 +248,48 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
         this.slackFeedbackMessage = status.status === 'in_progress'
           ? 'Slack sync started. Messages will refresh shortly.'
           : 'Slack sync could not be started.';
+        this.cdr.detectChanges();
         this.loadSlackChannels();
       },
       error: (error: Error) => {
         this.isSlackSyncing = false;
         this.slackErrorMessage = error.message;
+        this.cdr.detectChanges();
       }
     });
+  }
+
+  get hasSavedRepos(): boolean {
+    return this.repos.some(r => r.isConnected);
+  }
+
+  editRepos(): void {
+    this.isEditingRepos = true;
+    this.cdr.detectChanges();
+  }
+
+  cancelEditRepos(): void {
+    this.isEditingRepos = false;
+    // Reset checkboxes back to what was last saved
+    this.selectedRepoIds = this.repos.filter(r => r.isConnected).map(r => r.id);
+    this.cdr.detectChanges();
   }
 
   saveRepoSelection(): void {
     this.isGitHubSaving = true;
     this.githubErrorMessage = '';
     this.integrationService.updateGitHubRepos(this.workspaceId, this.selectedRepoIds).pipe(
-      finalize(() => { this.isGitHubSaving = false; })
+      finalize(() => { this.isGitHubSaving = false; this.cdr.detectChanges(); })
     ).subscribe({
       next: () => {
         this.githubFeedbackMessage = 'Repository selection saved.';
+        this.isEditingRepos = false;
+        this.cdr.detectChanges();
         this.loadRepos();
       },
       error: () => {
         this.githubErrorMessage = 'Could not save repository selection.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -271,11 +304,13 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
         this.githubFeedbackMessage = status.status === 'in_progress'
           ? 'GitHub sync started. Signals will refresh shortly.'
           : 'GitHub sync could not be started.';
+        this.cdr.detectChanges();
         this.loadRepos();
       },
       error: (error: Error) => {
         this.isSyncing = false;
         this.githubErrorMessage = error.message;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -290,11 +325,13 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
         this.jiraFeedbackMessage = status.status === 'in_progress'
           ? 'Jira sync started. Signals will refresh shortly.'
           : 'Jira sync could not be started.';
+        this.cdr.detectChanges();
         this.loadJira();
       },
       error: (error: Error) => {
         this.isJiraSyncing = false;
         this.jiraErrorMessage = error.message;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -315,6 +352,7 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
       this.slackWorkspaceName = response.workspaceName ?? '';
       this.slackWorkspaceUrl = response.workspaceUrl ?? '';
       this.slackLastSyncAt = response.lastSyncAt;
+      this.cdr.detectChanges();
     });
   }
 
@@ -326,6 +364,13 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
       this.accountName = response.accountName ?? '';
       this.accountHandle = response.accountHandle ?? '';
       this.githubLastSyncAt = response.lastSyncAt;
+      // Show edit mode only when nothing has been saved yet (first-time connection)
+      if (response.connected && this.selectedRepoIds.length === 0) {
+        this.isEditingRepos = true;
+      } else if (this.selectedRepoIds.length > 0) {
+        this.isEditingRepos = false;
+      }
+      this.cdr.detectChanges();
     });
   }
 
@@ -341,9 +386,11 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
 
         // Only attempt to load projects if the integration record exists.
         if (status.connected) {
+          this.cdr.detectChanges();
           this.loadJiraProjects();
         } else {
           this.jiraResources = [];
+          this.cdr.detectChanges();
         }
       },
       error: (err) => {
@@ -363,12 +410,14 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
         if (response.lastSyncAt) {
           this.jiraLastSyncAt = response.lastSyncAt;
         }
+        this.cdr.detectChanges();
       },
       error: () => {
         // Project fetch failed (e.g., expired token) but integration still exists.
         // Keep isJiraConnected = true; just show empty resources.
         this.jiraResources = [];
         this.jiraErrorMessage = 'Could not load Jira projects. The connection may need to be refreshed.';
+        this.cdr.detectChanges();
       }
     });
   }

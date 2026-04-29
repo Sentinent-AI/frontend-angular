@@ -96,15 +96,44 @@
   <p class="feedback success" *ngIf="githubFeedbackMessage">{{ githubFeedbackMessage }}</p>
   <p class="feedback error" *ngIf="githubErrorMessage">{{ githubErrorMessage }}</p>
 
-  <section class="selection-card" *ngIf="isGitHubConnected">
+  <!-- Saved repos summary — shown when repos are saved and not editing -->
+  <section class="selection-card" *ngIf="isGitHubConnected && !isEditingRepos">
     <div class="section-head">
       <div>
-        <h3>Repository selection</h3>
+        <h3>Connected repositories</h3>
+        <p *ngIf="selectedRepoIds.length > 0">
+          {{ selectedRepoIds.length }} {{ selectedRepoIds.length === 1 ? 'repository' : 'repositories' }} selected.
+        </p>
+        <p *ngIf="selectedRepoIds.length === 0">No repositories selected yet.</p>
+      </div>
+      <button type="button" class="secondary-btn" (click)="editRepos()">Edit repositories</button>
+    </div>
+
+    <div class="repo-list">
+      <div class="repo-item repo-item--readonly" *ngFor="let repo of repos">
+        <span class="repo-status-dot" [class.active]="isRepoSelected(repo.id)"></span>
+        <span>
+          <strong>{{ repo.name }}</strong>
+          <small>{{ repo.fullName }}</small>
+        </span>
+        <span class="repo-tag" *ngIf="isRepoSelected(repo.id)">Active</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Edit mode — shown on first connect or when user clicks "Edit repositories" -->
+  <section class="selection-card" *ngIf="isGitHubConnected && isEditingRepos">
+    <div class="section-head">
+      <div>
+        <h3>Select repositories</h3>
         <p>Choose which repositories should contribute GitHub signals to the dashboard.</p>
       </div>
-      <button type="button" class="primary-btn" [disabled]="isGitHubSaving" (click)="saveRepoSelection()">
-        {{ isGitHubSaving ? 'Saving...' : 'Save Selection' }}
-      </button>
+      <div class="section-head-actions">
+        <button type="button" class="secondary-btn" (click)="cancelEditRepos()" *ngIf="hasSavedRepos">Cancel</button>
+        <button type="button" class="primary-btn" [disabled]="isGitHubSaving" (click)="saveRepoSelection()">
+          {{ isGitHubSaving ? 'Saving...' : 'Save Selection' }}
+        </button>
+      </div>
     </div>
 
     <div class="repo-list">
