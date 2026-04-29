@@ -101,6 +101,20 @@ export class IntegrationService {
       );
   }
 
+  syncSlack(workspaceId: string): Observable<SyncStatus> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.post<GitHubSyncResponse>(`${this.apiUrl}/slack/sync`, {}, { params }).pipe(
+      map((response) => {
+        const status: SyncStatus['status'] = response.status === 'sync_started' ? 'in_progress' : 'failed';
+        return {
+          syncId: `sync-${Date.now()}`,
+          status,
+        };
+      }),
+      catchError((error) => throwError(() => toError(error, 'Unable to sync Slack.'))),
+    );
+  }
+
   disconnectSlack(workspaceId: string): Observable<void> {
     return this.getIntegrations(workspaceId).pipe(
       switchMap((integrations) => {
@@ -363,6 +377,17 @@ export class IntegrationService {
         console.error('[IntegrationService] getJiraStatus error:', err);
         return of({ connected: false });
       }),
+    );
+  }
+
+  replyToSlack(workspaceId: string, channelId: string, threadTs: string, text: string): Observable<any> {
+    const params = new HttpParams().set('workspace_id', workspaceId);
+    return this.http.post(`${this.apiUrl}/integrations/slack/reply`, {
+      channel_id: channelId,
+      thread_ts: threadTs,
+      text: text
+    }, { params }).pipe(
+      catchError((error) => throwError(() => toError(error, 'Unable to send Slack reply.'))),
     );
   }
 }
