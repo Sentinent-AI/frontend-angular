@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { finalize } from 'rxjs';
 import { IntegrationService } from '../../services/integration.service';
 import { GitHubRepo, SyncStatus } from '../../models/github-integration.model';
 import { SlackChannel } from '../../models/slack-integration.model';
@@ -82,15 +83,12 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
   }
 
   private onWindowFocus = (): void => {
-    // If we have an active feedback message, let's refresh to see if connection succeeded in background
-    if (this.slackFeedbackMessage === 'Starting Slack connection...' ||
-      this.githubFeedbackMessage === 'Starting GitHub connection...' ||
-      this.jiraFeedbackMessage === 'Starting Jira connection...') {
-      this.slackFeedbackMessage = '';
-      this.githubFeedbackMessage = '';
-      this.jiraFeedbackMessage = '';
-      this.loadAllIntegrations();
-    }
+    // Always reload integrations when the tab regains focus so that OAuth
+    // connections completed in another tab/window are picked up immediately.
+    this.slackFeedbackMessage = this.slackFeedbackMessage === 'Starting Slack connection...' ? '' : this.slackFeedbackMessage;
+    this.githubFeedbackMessage = this.githubFeedbackMessage === 'Starting GitHub connection...' ? '' : this.githubFeedbackMessage;
+    this.jiraFeedbackMessage = this.jiraFeedbackMessage === 'Starting Jira connection...' ? '' : this.jiraFeedbackMessage;
+    this.loadAllIntegrations();
   };
 
   private loadAllIntegrations(): void {
@@ -102,8 +100,19 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
   connectSlack(): void {
     this.slackErrorMessage = '';
     this.slackFeedbackMessage = 'Starting Slack connection...';
-    this.integrationService.connectSlack(this.workspaceId).subscribe({
+    // Open the window synchronously (in the same click event) to avoid popup blockers,
+    // then navigate it to the auth URL once the API returns it.
+    const authWindow = window.open('', '_blank');
+    this.integrationService.getSlackAuthUrl(this.workspaceId).subscribe({
+      next: ({ authUrl }) => {
+        if (authWindow) {
+          authWindow.location.href = authUrl;
+        } else {
+          window.location.href = authUrl;
+        }
+      },
       error: (error: Error) => {
+        authWindow?.close();
         this.slackErrorMessage = error.message;
         this.slackFeedbackMessage = '';
       }
@@ -120,8 +129,17 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
   connectGitHub(): void {
     this.githubErrorMessage = '';
     this.githubFeedbackMessage = 'Starting GitHub connection...';
-    this.integrationService.connectGitHub(this.workspaceId).subscribe({
+    const authWindow = window.open('', '_blank');
+    this.integrationService.getGitHubAuthUrl(this.workspaceId).subscribe({
+      next: ({ authUrl }) => {
+        if (authWindow) {
+          authWindow.location.href = authUrl;
+        } else {
+          window.location.href = authUrl;
+        }
+      },
       error: (error: Error) => {
+        authWindow?.close();
         this.githubErrorMessage = error.message;
         this.githubFeedbackMessage = '';
       }
@@ -139,8 +157,17 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
   connectJira(): void {
     this.jiraErrorMessage = '';
     this.jiraFeedbackMessage = 'Starting Jira connection...';
-    this.integrationService.connectJira(this.workspaceId).subscribe({
+    const authWindow = window.open('', '_blank');
+    this.integrationService.getJiraAuthUrl(this.workspaceId).subscribe({
+      next: ({ authUrl }) => {
+        if (authWindow) {
+          authWindow.location.href = authUrl;
+        } else {
+          window.location.href = authUrl;
+        }
+      },
       error: (error: Error) => {
+        authWindow?.close();
         this.jiraErrorMessage = error.message;
         this.jiraFeedbackMessage = '';
       }
@@ -185,15 +212,15 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
   saveSlackChannelSelection(): void {
     this.isSlackSaving = true;
     this.slackErrorMessage = '';
-    this.integrationService.updateSlackChannels(this.workspaceId, this.selectedSlackChannelIds).subscribe({
+    this.integrationService.updateSlackChannels(this.workspaceId, this.selectedSlackChannelIds).pipe(
+      finalize(() => { this.isSlackSaving = false; })
+    ).subscribe({
       next: () => {
-        this.isSlackSaving = false;
         this.slackFeedbackMessage = 'Slack channel selection saved.';
         this.loadSlackChannels();
-        this.syncSlackNow(); // Trigger sync after saving selection
+        this.syncSlackNow();
       },
       error: () => {
-        this.isSlackSaving = false;
         this.slackErrorMessage = 'Could not save Slack channel selection.';
       }
     });
@@ -221,14 +248,14 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDest
   saveRepoSelection(): void {
     this.isGitHubSaving = true;
     this.githubErrorMessage = '';
-    this.integrationService.updateGitHubRepos(this.workspaceId, this.selectedRepoIds).subscribe({
+    this.integrationService.updateGitHubRepos(this.workspaceId, this.selectedRepoIds).pipe(
+      finalize(() => { this.isGitHubSaving = false; })
+    ).subscribe({
       next: () => {
-        this.isGitHubSaving = false;
         this.githubFeedbackMessage = 'Repository selection saved.';
         this.loadRepos();
       },
       error: () => {
-        this.isGitHubSaving = false;
         this.githubErrorMessage = 'Could not save repository selection.';
       }
     });
