@@ -301,7 +301,6 @@ describe('WorkspaceIntegrationsComponent', () => {
   });
 
   it('saveRepoSelection() stays in edit mode and shows error on failure', () => {
-    const { throwError } = require('rxjs');
     mockIntegrationService.updateGitHubRepos.and.returnValue(
       throwError(() => new Error('Network error'))
     );
