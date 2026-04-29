@@ -332,9 +332,11 @@ describe('WorkspaceIntegrationsComponent', () => {
     expect(activeTag).not.toBeNull();
     expect(activeTag?.textContent?.trim()).toBe('Active');
 
-    // No checkboxes in summary view
-    const checkboxes = compiled.querySelectorAll('input[type="checkbox"]');
-    expect(checkboxes.length).toBe(0);
+    // Repo items in summary view are readonly — no checkboxes inside them
+    const readonlyItems = compiled.querySelectorAll('.repo-item--readonly');
+    expect(readonlyItems.length).toBeGreaterThan(0);
+    const repoCheckboxes = compiled.querySelectorAll('.repo-item--readonly input[type="checkbox"]');
+    expect(repoCheckboxes.length).toBe(0);
   });
 
   it('edit view renders checkboxes and Save Selection button', () => {
