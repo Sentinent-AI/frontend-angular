@@ -157,7 +157,10 @@ export class SignalBoardComponent {
     const number = signal.metadata.number;
     const comment = this.githubComments[signal.id];
 
-    if (!comment || !comment.trim() || !repo || !number) return;
+    if (!workspaceId || !comment || !comment.trim() || !repo || !number) {
+      if (!workspaceId) this.showToast('Cannot comment: workspace context is missing');
+      return;
+    }
 
     this.submittingGitHubComment[signal.id] = true;
     this.integrationService.addGitHubComment(workspaceId, repo, number, comment).subscribe({
@@ -181,6 +184,10 @@ export class SignalBoardComponent {
     const number = signal.metadata.number;
     const currentState = signal.metadata.state;
 
+    if (!workspaceId) {
+      this.showToast('Cannot update: workspace context is missing');
+      return;
+    }
     if (!repo || !number) return;
 
     const newState = currentState === 'open' ? 'closed' : 'open';
@@ -193,8 +200,8 @@ export class SignalBoardComponent {
         }
         this.cdr.detectChanges();
       },
-      error: () => {
-        this.showToast('Failed to update GitHub status');
+      error: (err: Error) => {
+        this.showToast(err?.message || 'Failed to update GitHub issue state');
       }
     });
   }
