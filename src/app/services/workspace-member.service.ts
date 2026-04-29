@@ -24,6 +24,7 @@ interface InvitationResponse {
   role: InvitationRole;
   expires_at: string;
   created_at: string;
+  accepted_at: string | null;
 }
 
 interface InvitationValidationResponse {
@@ -53,7 +54,7 @@ export class WorkspaceMemberService {
 
   getMembers(workspaceId: string): Observable<WorkspaceMember[]> {
     return this.http.get<WorkspaceMemberResponse[]>(`${this.apiUrl}/workspaces/${workspaceId}/members`).pipe(
-      map((members) => members.map((member) => this.mapMember(member))),
+      map((members) => members.map((m) => this.mapMember(m))),
       catchError((error) => throwError(() => toError(error, 'Unable to load workspace members.'))),
     );
   }
@@ -63,7 +64,7 @@ export class WorkspaceMemberService {
       .post<InvitationResponse>(`${this.apiUrl}/workspaces/${workspaceId}/invitations`, { email, role })
       .pipe(
         timeout(20000),
-        map((invitation) => this.mapInvitation(invitation)),
+        map((inv) => this.mapInvitation(inv)),
         catchError((error) => throwError(() => toError(error, 'Unable to create invitation.'))),
       );
   }
@@ -72,7 +73,7 @@ export class WorkspaceMemberService {
     return this.http
       .patch<WorkspaceMemberResponse>(`${this.apiUrl}/workspaces/${workspaceId}/members/${userId}`, { role })
       .pipe(
-        map((member) => this.mapMember(member)),
+        map((m) => this.mapMember(m)),
         catchError((error) => throwError(() => toError(error, 'Unable to update member role.'))),
       );
   }
@@ -83,16 +84,28 @@ export class WorkspaceMemberService {
     );
   }
 
-  getPendingInvitations(workspaceId: string): Observable<Invitation[]> {
+  getAllInvitations(workspaceId: string): Observable<Invitation[]> {
     return this.http.get<InvitationResponse[]>(`${this.apiUrl}/workspaces/${workspaceId}/invitations`).pipe(
-      map((invitations) => invitations.map((invitation) => this.mapInvitation(invitation))),
+      map((invitations) => invitations.map((inv) => this.mapInvitation(inv))),
       catchError((error) => throwError(() => toError(error, 'Unable to load invitations.'))),
     );
+  }
+
+  /** @deprecated Use getAllInvitations */
+  getPendingInvitations(workspaceId: string): Observable<Invitation[]> {
+    return this.getAllInvitations(workspaceId);
   }
 
   cancelInvitation(workspaceId: string, invitationId: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/workspaces/${workspaceId}/invitations/${invitationId}`).pipe(
       catchError((error) => throwError(() => toError(error, 'Unable to cancel invitation.'))),
+    );
+  }
+
+  resendInvitation(token: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/invitations/${token}/resend`, {}).pipe(
+      timeout(15000),
+      catchError((error) => throwError(() => toError(error, 'Unable to resend invitation.'))),
     );
   }
 
@@ -133,14 +146,15 @@ export class WorkspaceMemberService {
     };
   }
 
-  private mapInvitation(invitation: InvitationResponse): Invitation {
+  private mapInvitation(inv: InvitationResponse): Invitation {
     return {
-      id: String(invitation.id),
-      email: invitation.email,
-      role: invitation.role,
-      token: invitation.token ?? '',
-      expiresAt: new Date(invitation.expires_at),
-      createdAt: new Date(invitation.created_at),
+      id: String(inv.id),
+      email: inv.email,
+      role: inv.role,
+      token: inv.token ?? '',
+      expiresAt: new Date(inv.expires_at),
+      createdAt: new Date(inv.created_at),
+      acceptedAt: inv.accepted_at ? new Date(inv.accepted_at) : null,
     };
   }
 }

@@ -306,3 +306,91 @@ h1 {
     transform: rotate(360deg);
   }
 }
+
+/* Members strip */
+.members-strip {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.strip-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #64748b;
+  margin: 0;
+  padding-top: 0.6rem;
+  flex-shrink: 0;
+}
+
+.member-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.member-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem 0.3rem 0.3rem;
+}
+
+.chip-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #111827, #334155);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.chip-info {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.chip-email {
+  font-size: 0.8rem;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.chip-role {
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+  text-transform: capitalize;
+}
+
+.role-owner  { background: #fef3c7; color: #92400e; }
+.role-member { background: #e0e7ff; color: #3730a3; }
+.role-viewer { background: #f1f5f9; color: #475569; }
+
+.manage-link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: none;
+  margin-left: auto;
+  padding-top: 0.6rem;
+  white-space: nowrap;
+}
+
+.manage-link:hover { text-decoration: underline; }

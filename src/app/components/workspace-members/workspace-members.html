@@ -5,50 +5,41 @@
       <h2>Members and Invitations</h2>
       <p>Invite teammates, manage roles, and keep pending access requests visible in one place.</p>
     </div>
-
   </header>
 
+  <!-- Invite form -->
   <section class="invite-card">
     <div class="section-head">
-      <div>
-        <h3>Invite Member</h3>
-        <p>Owners can invite members or viewers by email and share the generated invitation link.</p>
-      </div>
+      <h3>Invite Member</h3>
+      <p>Send an invitation email to add someone to this workspace.</p>
     </div>
 
     <div class="invite-form">
       <label>
         <span>Email</span>
-        <input type="email" [(ngModel)]="inviteEmail" placeholder="user@example.com" />
+        <input type="email" [(ngModel)]="inviteEmail" placeholder="user@example.com" [disabled]="isSubmittingInvite" />
       </label>
-
       <label>
         <span>Role</span>
-        <select [(ngModel)]="inviteRole">
+        <select [(ngModel)]="inviteRole" [disabled]="isSubmittingInvite">
           <option value="member">Member</option>
           <option value="viewer">Viewer</option>
         </select>
       </label>
-
       <button type="button" class="primary-btn" [disabled]="isSubmittingInvite" (click)="inviteMember()">
-        {{ isSubmittingInvite ? 'Sending...' : 'Invite Member' }}
+        {{ isSubmittingInvite ? 'Sending…' : 'Invite' }}
       </button>
     </div>
 
     <p class="feedback success" *ngIf="inviteSuccess">{{ inviteSuccess }}</p>
     <p class="feedback error" *ngIf="inviteError">{{ inviteError }}</p>
-    <div class="invite-link" *ngIf="invitationLink">
-      <span>Invitation link</span>
-      <code>{{ invitationLink }}</code>
-    </div>
   </section>
 
+  <!-- Current members -->
   <section class="members-card">
     <div class="section-head">
-      <div>
-        <h3>Workspace Members</h3>
-        <p>Update roles or remove members while keeping the owner protected.</p>
-      </div>
+      <h3>Workspace Members <span class="count-badge">{{ members.length }}</span></h3>
+      <p>Update roles or remove members while keeping the owner protected.</p>
     </div>
 
     <p class="feedback error" *ngIf="actionError">{{ actionError }}</p>
@@ -62,17 +53,11 @@
             <p>Joined {{ member.joinedAt | date: 'mediumDate' }}</p>
           </div>
         </div>
-
         <div class="member-actions">
-          <select
-            [disabled]="member.role === 'owner'"
-            [ngModel]="member.role"
-            (ngModelChange)="updateMemberRole(member, $event)"
-          >
+          <select [disabled]="member.role === 'owner'" [ngModel]="member.role" (ngModelChange)="updateMemberRole(member, $event)">
             <option *ngFor="let role of availableRoles" [value]="role">{{ role }}</option>
           </select>
-
-          <button type="button" class="secondary-btn" [disabled]="member.role === 'owner'" (click)="removeMember(member)">
+          <button type="button" class="danger-btn" [disabled]="member.role === 'owner'" (click)="removeMember(member)">
             Remove
           </button>
         </div>
@@ -82,29 +67,46 @@
     <ng-template #noMembers>
       <div class="empty-state">
         <h4>No members found</h4>
-        <p>Invite teammates to start collaborating in this workspace.</p>
+        <p>Invite teammates to start collaborating.</p>
       </div>
     </ng-template>
   </section>
 
+  <!-- Pending invitations -->
   <section class="invitations-card">
     <div class="section-head">
-      <div>
-        <h3>Pending Invitations</h3>
-        <p>Track open invites, copy links again, or cancel invitations that are no longer needed.</p>
-      </div>
+      <h3>Pending Invitations <span class="count-badge">{{ pendingInvitations.length }}</span></h3>
+      <p>Track open invites, resend emails, or cancel invitations no longer needed.</p>
     </div>
 
-    <div class="invitation-list" *ngIf="invitations.length; else noInvites">
-      <article class="invitation-row" *ngFor="let invitation of invitations; trackBy: trackInvitation">
+    <div class="invitation-list" *ngIf="pendingInvitations.length; else noInvites">
+      <article class="invitation-row" *ngFor="let invitation of pendingInvitations; trackBy: trackInvitation">
         <div>
           <h4>{{ invitation.email }}</h4>
-          <p>{{ invitation.role }} • expires {{ invitation.expiresAt | date: 'mediumDate' }}</p>
+          <p class="inv-meta">
+            <span class="role-badge">{{ invitation.role }}</span>
+            Expires {{ invitation.expiresAt | date: 'mediumDate' }}
+          </p>
         </div>
-
-        <div class="member-actions">
-          <button type="button" class="secondary-btn" (click)="resendInvitation(invitation)">Resend</button>
-          <button type="button" class="danger-btn" (click)="cancelInvitation(invitation)">Cancel</button>
+        <div class="row-right">
+          <div class="member-actions">
+            <button
+              type="button"
+              class="secondary-btn"
+              [disabled]="getResendState(invitation.id).loading"
+              (click)="resendInvitation(invitation)"
+            >
+              {{ getResendState(invitation.id).loading ? 'Sending…' : 'Resend' }}
+            </button>
+            <button type="button" class="danger-btn" (click)="cancelInvitation(invitation)">Cancel</button>
+          </div>
+          <!-- Per-row feedback — right under the action buttons -->
+          <p class="feedback success row-feedback" *ngIf="getResendState(invitation.id).success">
+            {{ getResendState(invitation.id).success }}
+          </p>
+          <p class="feedback error row-feedback" *ngIf="getResendState(invitation.id).error">
+            {{ getResendState(invitation.id).error }}
+          </p>
         </div>
       </article>
     </div>
@@ -112,8 +114,30 @@
     <ng-template #noInvites>
       <div class="empty-state">
         <h4>No pending invitations</h4>
-        <p>New invitations will show up here until they are accepted or cancelled.</p>
+        <p>New invitations will appear here until accepted or cancelled.</p>
       </div>
     </ng-template>
   </section>
+
+  <!-- Accepted invitations -->
+  <section class="invitations-card accepted-card" *ngIf="acceptedInvitations.length">
+    <div class="section-head">
+      <h3>Accepted Invitations <span class="count-badge accepted">{{ acceptedInvitations.length }}</span></h3>
+      <p>These invitations have been accepted and the user is now a member.</p>
+    </div>
+
+    <div class="invitation-list">
+      <article class="invitation-row accepted-row" *ngFor="let invitation of acceptedInvitations; trackBy: trackInvitation">
+        <div>
+          <h4>{{ invitation.email }}</h4>
+          <p class="inv-meta">
+            <span class="role-badge">{{ invitation.role }}</span>
+            Accepted {{ invitation.acceptedAt | date: 'mediumDate' }}
+          </p>
+        </div>
+        <span class="accepted-chip">✓ Accepted</span>
+      </article>
+    </div>
+  </section>
+
 </section>
