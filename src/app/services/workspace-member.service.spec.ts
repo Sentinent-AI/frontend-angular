@@ -43,11 +43,13 @@ describe('WorkspaceMemberService', () => {
     expect(members[0].joinedAt instanceof Date).toBeTrue();
   });
 
-  it('creates an invitation and exposes the token for the UI link', () => {
+  it('creates an invitation and maps acceptedAt as null for pending invites', () => {
     let invitationToken = '';
+    let acceptedAt: Date | null = new Date();
 
     service.inviteMember('1', 'designer@example.com', 'viewer').subscribe((result) => {
       invitationToken = result.token;
+      acceptedAt = result.acceptedAt;
     });
 
     const request = httpMock.expectOne('/api/workspaces/1/invitations');
@@ -63,22 +65,66 @@ describe('WorkspaceMemberService', () => {
       role: 'viewer',
       expires_at: '2026-04-01T00:00:00Z',
       created_at: '2026-03-24T00:00:00Z',
+      accepted_at: null,
     });
 
     expect(invitationToken).toBe('invite-token');
+    expect(acceptedAt).toBeNull();
+  });
+
+  it('loads all invitations and maps accepted timestamps', () => {
+    let acceptedAt: unknown = null;
+
+    service.getAllInvitations('1').subscribe((result) => {
+      acceptedAt = result[0].acceptedAt;
+    });
+
+    const request = httpMock.expectOne('/api/workspaces/1/invitations');
+    expect(request.request.method).toBe('GET');
+    request.flush([
+      {
+        id: 8,
+        email: 'joined@example.com',
+        token: 'accepted-token',
+        role: 'member',
+        expires_at: '2026-04-01T00:00:00Z',
+        created_at: '2026-03-24T00:00:00Z',
+        accepted_at: '2026-03-25T00:00:00Z',
+      },
+    ]);
+
+    expect(acceptedAt instanceof Date).toBeTrue();
+  });
+
+  it('resends invitations by token', () => {
+    let completed = false;
+
+    service.resendInvitation('invite-token').subscribe(() => {
+      completed = true;
+    });
+
+    const request = httpMock.expectOne('/api/invitations/invite-token/resend');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({});
+    request.flush({});
+
+    expect(completed).toBeTrue();
   });
 
   it('maps invitation validation into the frontend shape', () => {
     let invitedBy = '';
+    let invitedEmail = '';
 
     service.validateInvitation('invite-token').subscribe((result) => {
       invitedBy = result.invitedBy.email;
+      invitedEmail = result.email;
     });
 
     const request = httpMock.expectOne('/api/invitations/invite-token');
     expect(request.request.method).toBe('GET');
     request.flush({
       valid: true,
+      email: 'invitee@example.com',
       workspace: {
         id: 1,
         name: 'Engineering',
@@ -90,6 +136,7 @@ describe('WorkspaceMemberService', () => {
     });
 
     expect(invitedBy).toBe('owner@example.com');
+    expect(invitedEmail).toBe('invitee@example.com');
   });
 
   it('maps accepted invitations back to the workspace route id', () => {

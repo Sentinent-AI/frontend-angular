@@ -99,7 +99,7 @@ describe('Login', () => {
     component.handleLogin();
     tick(1200);
 
-    expect(mockAuthService.login).toHaveBeenCalledWith('user@example.com', 'secret');
+    expect(mockAuthService.login).toHaveBeenCalledWith('user@example.com', 'secret', true);
     expect(component.showSuccess).toBeTrue();
     expect(component.successTitle).toBe('Welcome back');
     expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
@@ -124,7 +124,7 @@ describe('Login', () => {
 
     component.handleRegister();
 
-    expect(component.registerError).toBe('Invalid credentials');
+    expect(component.registerError).toBe('Please fill in all required fields.');
     expect(mockAuthService.signup).not.toHaveBeenCalled();
   });
 
@@ -136,7 +136,7 @@ describe('Login', () => {
 
     component.handleRegister();
 
-    expect(component.registerError).toBe('Enter a valid email address');
+    expect(component.registerError).toBe('Enter a valid email address.');
     expect(mockAuthService.signup).not.toHaveBeenCalled();
   });
 
@@ -155,11 +155,11 @@ describe('Login', () => {
     component.activeTab = 'register';
     component.regFullName = 'Alex Rivera';
     component.regEmail = 'user@example.com';
-    component.regPassword = 'secret';
+    component.regPassword = 'long-password';
 
     component.handleRegister();
 
-    expect(component.registerError).toBe('Email already exists');
+    expect(component.registerError).toBe('An account with this email already exists.');
     expect(component.activeTab).toBe('register');
   });
 
@@ -169,7 +169,7 @@ describe('Login', () => {
     component.activeTab = 'register';
     component.regFullName = 'Alex Rivera';
     component.regEmail = 'new@example.com';
-    component.regPassword = 'secret';
+    component.regPassword = 'long-password';
 
     component.handleRegister();
     tick(1500);
