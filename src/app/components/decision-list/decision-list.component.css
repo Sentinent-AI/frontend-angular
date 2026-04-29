@@ -64,6 +64,16 @@
     border-radius: 8px;
     cursor: pointer;
     font-size: 13px;
+    transition: opacity 0.15s;
+}
+
+.btn-danger:hover:not(:disabled) {
+    opacity: 0.82;
+}
+
+.btn-danger:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 
 .decision-card {
@@ -170,4 +180,130 @@
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* ── Delete confirmation modal ───────────────────────────────────────────── */
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(2, 6, 23, 0.55);
+    display: grid;
+    place-items: center;
+    padding: 18px;
+    animation: backdropIn 0.18s ease;
+}
+
+@keyframes backdropIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.delete-modal {
+    width: min(460px, 100%);
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 16px;
+    box-shadow: 0 28px 72px rgba(0, 0, 0, 0.24);
+    padding: 24px 24px 22px;
+    animation: modalIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.delete-modal-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    margin-bottom: 14px;
+}
+
+.delete-modal-eyebrow {
+    margin: 0 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 700;
+}
+
+.delete-modal-title {
+    margin: 0;
+    font-size: 20px;
+    line-height: 1.3;
+    font-weight: 700;
+    color: #0a0a0a;
+    word-break: break-word;
+}
+
+.delete-modal-copy {
+    margin: 10px 0 0;
+    font-size: 14px;
+    color: #4b5563;
+    line-height: 1.55;
+}
+
+.delete-modal-error {
+    margin: 14px 0 0;
+    background: #fdecec;
+    color: #8d1c1c;
+    border: 1px solid #f7c5c5;
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.delete-modal-actions {
+    margin-top: 22px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.modal-btn {
+    border-radius: 10px;
+    border: 1px solid transparent;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, background 0.15s;
+    line-height: 1;
+}
+
+.modal-btn.cancel {
+    background: #fff;
+    color: #111;
+    border-color: #d1d5db;
+}
+
+.modal-btn.cancel:hover:not(:disabled) {
+    background: #f9fafb;
+}
+
+.modal-btn.confirm {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+    min-width: 100px;
+}
+
+.modal-btn.confirm:hover:not(:disabled) {
+    background: #000;
+}
+
+.modal-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
