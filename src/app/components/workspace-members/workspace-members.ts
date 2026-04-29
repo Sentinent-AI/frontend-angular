@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Invitation, InvitationRole, WorkspaceMember, WorkspaceRole } from '../../models/workspace-member.model';
@@ -15,6 +15,7 @@ import { WorkspaceMemberService } from '../../services/workspace-member.service'
 export class WorkspaceMembersComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly workspaceMemberService = inject(WorkspaceMemberService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   workspaceId = '';
   members: WorkspaceMember[] = [];
@@ -59,16 +60,21 @@ export class WorkspaceMembersComponent implements OnInit {
 
     this.workspaceMemberService.inviteMember(this.workspaceId, trimmedEmail, this.inviteRole).subscribe({
       next: invitation => {
-        this.isSubmittingInvite = false;
-        this.inviteSuccess = `Invitation created for ${invitation.email}.`;
-        this.invitationLink = `/invitations/${invitation.token}`;
-        this.inviteEmail = '';
-        this.inviteRole = 'member';
-        this.loadInvitations();
+        try {
+          this.inviteSuccess = `Invitation sent to ${invitation.email}.`;
+          this.invitationLink = `/invitations/${invitation.token}`;
+          this.inviteEmail = '';
+          this.inviteRole = 'member';
+          this.loadInvitations();
+        } finally {
+          this.isSubmittingInvite = false;
+          this.cdr.detectChanges();
+        }
       },
       error: (error: Error) => {
         this.isSubmittingInvite = false;
         this.inviteError = error.message;
+        this.cdr.detectChanges();
       }
     });
   }
