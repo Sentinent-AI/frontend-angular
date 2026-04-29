@@ -19,6 +19,7 @@ export interface Invitation {
 
 export interface InvitationValidation {
   valid: boolean;
+  email: string;
   workspace: {
     id: string;
     name: string;

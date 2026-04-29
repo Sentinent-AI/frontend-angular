@@ -22,12 +22,6 @@ interface ResetTokenValidationResponse {
   email: string;
 }
 
-export interface SignupProfile {
-  fullName: string;
-  jobTitle?: string;
-  organization?: string;
-}
-
 @Injectable({
   providedIn: 'root',
 })
@@ -89,19 +83,25 @@ export class AuthService {
 
   getCurrentUserId(): string | null {
     const token = this.getToken();
-    if (!token) {
-      return null;
-    }
-
+    if (!token) return null;
     const payload = token.split('.')[1];
-    if (!payload) {
+    if (!payload) return null;
+    try {
+      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as { user_id?: number | string };
+      return decoded.user_id === undefined ? null : String(decoded.user_id);
+    } catch {
       return null;
     }
+  }
 
+  getCurrentUserEmail(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    const payload = token.split('.')[1];
+    if (!payload) return null;
     try {
-      const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
-      const decodedPayload = JSON.parse(atob(normalizedPayload)) as { user_id?: number | string };
-      return decodedPayload.user_id === undefined ? null : String(decodedPayload.user_id);
+      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as { email?: string };
+      return decoded.email ?? null;
     } catch {
       return null;
     }

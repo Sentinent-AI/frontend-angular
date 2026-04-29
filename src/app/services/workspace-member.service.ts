@@ -28,6 +28,7 @@ interface InvitationResponse {
 
 interface InvitationValidationResponse {
   valid: boolean;
+  email: string;
   workspace: {
     id: number;
     name: string;
@@ -61,7 +62,7 @@ export class WorkspaceMemberService {
     return this.http
       .post<InvitationResponse>(`${this.apiUrl}/workspaces/${workspaceId}/invitations`, { email, role })
       .pipe(
-        timeout(20000), // fail after 20 s so the button never stays stuck
+        timeout(20000),
         map((invitation) => this.mapInvitation(invitation)),
         catchError((error) => throwError(() => toError(error, 'Unable to create invitation.'))),
       );
@@ -99,6 +100,7 @@ export class WorkspaceMemberService {
     return this.http.get<InvitationValidationResponse>(`${this.apiUrl}/invitations/${token}`).pipe(
       map((response) => ({
         valid: response.valid,
+        email: response.email,
         workspace: {
           id: String(response.workspace.id),
           name: response.workspace.name,
