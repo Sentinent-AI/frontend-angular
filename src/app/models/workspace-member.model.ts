@@ -15,10 +15,12 @@ export interface Invitation {
   token: string;
   expiresAt: Date;
   createdAt: Date;
+  acceptedAt: Date | null;
 }
 
 export interface InvitationValidation {
   valid: boolean;
+  email: string;
   workspace: {
     id: string;
     name: string;

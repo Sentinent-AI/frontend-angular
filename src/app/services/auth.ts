@@ -22,12 +22,6 @@ interface ResetTokenValidationResponse {
   email: string;
 }
 
-export interface SignupProfile {
-  fullName: string;
-  jobTitle?: string;
-  organization?: string;
-}
-
 @Injectable({
   providedIn: 'root',
 })
@@ -51,9 +45,9 @@ export class AuthService {
     );
   }
 
-  login(email: string, password: string): Observable<AuthResponse> {
+  login(email: string, password: string, rememberMe: boolean = true): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { email, password }).pipe(
-      tap(res => this.setToken(res.token))
+      tap(res => this.setToken(res.token, rememberMe))
     );
   }
 
@@ -81,6 +75,7 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem(this.tokenKey);
+    sessionStorage.removeItem(this.tokenKey);
   }
 
   isLoggedIn(): boolean {
@@ -89,29 +84,41 @@ export class AuthService {
 
   getCurrentUserId(): string | null {
     const token = this.getToken();
-    if (!token) {
-      return null;
-    }
-
+    if (!token) return null;
     const payload = token.split('.')[1];
-    if (!payload) {
+    if (!payload) return null;
+    try {
+      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as { user_id?: number | string };
+      return decoded.user_id === undefined ? null : String(decoded.user_id);
+    } catch {
       return null;
     }
+  }
 
+  getCurrentUserEmail(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    const payload = token.split('.')[1];
+    if (!payload) return null;
     try {
-      const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
-      const decodedPayload = JSON.parse(atob(normalizedPayload)) as { user_id?: number | string };
-      return decodedPayload.user_id === undefined ? null : String(decodedPayload.user_id);
+      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as { email?: string };
+      return decoded.email ?? null;
     } catch {
       return null;
     }
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    return localStorage.getItem(this.tokenKey) ?? sessionStorage.getItem(this.tokenKey);
   }
 
-  private setToken(token: string): void {
-    localStorage.setItem(this.tokenKey, token);
+  private setToken(token: string, rememberMe: boolean = true): void {
+    localStorage.removeItem(this.tokenKey);
+    sessionStorage.removeItem(this.tokenKey);
+    if (rememberMe) {
+      localStorage.setItem(this.tokenKey, token);
+    } else {
+      sessionStorage.setItem(this.tokenKey, token);
+    }
   }
 }

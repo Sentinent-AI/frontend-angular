@@ -1,5 +1,161 @@
 <section class="accept-shell">
-  <article class="accept-card" *ngIf="invitation && !error; else errorState">
+
+  <!-- LOADING -->
+  <article class="accept-card" *ngIf="state === 'loading'">
+    <p class="eyebrow">Invitation</p>
+    <div class="loading-row">
+      <span class="spinner"></span>
+      <span>Validating your invitation…</span>
+    </div>
+  </article>
+
+  <!-- ERROR -->
+  <article class="accept-card error-card" *ngIf="state === 'error'">
+    <p class="eyebrow">Invitation</p>
+    <h1>Invitation unavailable</h1>
+    <p class="description">{{ errorMessage || 'This invitation is invalid or has expired.' }}</p>
+    <a routerLink="/login" class="secondary-btn">Go to sign in</a>
+  </article>
+
+  <!-- AUTH CHOICE — not logged in, show workspace info + two options -->
+  <article class="accept-card" *ngIf="state === 'auth-choice' && invitation">
+    <p class="eyebrow">You've been invited</p>
+    <h1>Join {{ invitation.workspace.name }}</h1>
+    <p class="description">
+      <strong>{{ invitation.invitedBy.email }}</strong> has invited you to join this workspace as a
+      <strong>{{ invitation.role }}</strong>.
+    </p>
+
+    <div class="summary">
+      <div>
+        <span>Workspace</span>
+        <strong>{{ invitation.workspace.name }}</strong>
+      </div>
+      <div>
+        <span>Your role</span>
+        <strong>{{ invitation.role }}</strong>
+      </div>
+    </div>
+
+    <p class="auth-prompt">To accept this invitation, sign in or create a free account.</p>
+
+    <div class="auth-choice-actions">
+      <button type="button" class="primary-btn" (click)="showSignIn()">Sign in</button>
+      <button type="button" class="secondary-btn" (click)="showSignUp()">Create account</button>
+    </div>
+  </article>
+
+  <!-- SIGN IN FORM -->
+  <article class="accept-card" *ngIf="state === 'sign-in' && invitation">
+    <p class="eyebrow">Sign in to accept</p>
+    <h1>Join {{ invitation.workspace.name }}</h1>
+
+    <p class="feedback error" *ngIf="signInError">{{ signInError }}</p>
+
+    <form class="inline-form" (ngSubmit)="handleSignIn()" novalidate>
+      <div class="field">
+        <label for="si-email">Email</label>
+        <input
+          id="si-email"
+          type="email"
+          [(ngModel)]="signInEmail"
+          name="signInEmail"
+          placeholder="you@example.com"
+          autocomplete="email"
+          [disabled]="isSigningIn"
+        />
+      </div>
+      <div class="field">
+        <label for="si-password">Password</label>
+        <input
+          id="si-password"
+          type="password"
+          [(ngModel)]="signInPassword"
+          name="signInPassword"
+          placeholder="Your password"
+          autocomplete="current-password"
+          [disabled]="isSigningIn"
+        />
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="primary-btn" [disabled]="isSigningIn">
+          {{ isSigningIn ? 'Signing in…' : 'Sign in & join' }}
+        </button>
+        <button type="button" class="ghost-btn" (click)="backToChoice()" [disabled]="isSigningIn">Back</button>
+      </div>
+    </form>
+  </article>
+
+  <!-- SIGN UP FORM -->
+  <article class="accept-card" *ngIf="state === 'sign-up' && invitation">
+    <p class="eyebrow">Create account to accept</p>
+    <h1>Join {{ invitation.workspace.name }}</h1>
+
+    <p class="feedback error" *ngIf="signUpError">{{ signUpError }}</p>
+
+    <form class="inline-form" (ngSubmit)="handleSignUp()" novalidate>
+      <div class="field">
+        <label for="su-name">Full name <span class="req">*</span></label>
+        <input
+          id="su-name"
+          type="text"
+          [(ngModel)]="signUpFullName"
+          name="signUpFullName"
+          placeholder="Your name"
+          autocomplete="name"
+          [disabled]="isSigningUp"
+        />
+      </div>
+      <div class="field">
+        <label for="su-email">Email <span class="req">*</span></label>
+        <input
+          id="su-email"
+          type="email"
+          [(ngModel)]="signUpEmail"
+          name="signUpEmail"
+          placeholder="you@example.com"
+          autocomplete="email"
+          [disabled]="isSigningUp"
+        />
+      </div>
+      <div class="field">
+        <label for="su-password">Password <span class="req">*</span></label>
+        <input
+          id="su-password"
+          type="password"
+          [(ngModel)]="signUpPassword"
+          name="signUpPassword"
+          placeholder="At least 8 characters"
+          autocomplete="new-password"
+          [disabled]="isSigningUp"
+        />
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="primary-btn" [disabled]="isSigningUp">
+          {{ isSigningUp ? 'Creating account…' : 'Create account & join' }}
+        </button>
+        <button type="button" class="ghost-btn" (click)="backToChoice()" [disabled]="isSigningUp">Back</button>
+      </div>
+    </form>
+  </article>
+
+  <!-- WRONG EMAIL — logged in with the wrong account -->
+  <article class="accept-card error-card" *ngIf="state === 'wrong-email' && invitation">
+    <p class="eyebrow">Wrong account</p>
+    <h1>Different email required</h1>
+    <p class="description">
+      You are signed in as <strong>{{ wrongEmailLoggedAs }}</strong>, but this invitation was sent to
+      <strong>{{ invitedEmail }}</strong>.
+    </p>
+    <p class="description">Please sign out and sign in with the correct account to accept this invitation.</p>
+    <div class="actions">
+      <a routerLink="/login" class="primary-btn">Go to sign in</a>
+      <a routerLink="/dashboard" class="secondary-btn">Back to dashboard</a>
+    </div>
+  </article>
+
+  <!-- JOIN — already logged in with matching email -->
+  <article class="accept-card" *ngIf="state === 'join' && invitation">
     <p class="eyebrow">Invitation</p>
     <h1>Join {{ invitation.workspace.name }}</h1>
     <p class="description">
@@ -17,22 +173,19 @@
       </div>
     </div>
 
-    <p class="feedback success" *ngIf="success">{{ success }}</p>
-
     <div class="actions">
-      <button type="button" class="primary-btn" [disabled]="isSubmitting" (click)="joinWorkspace()">
-        {{ isSubmitting ? 'Joining...' : 'Join Workspace' }}
+      <button type="button" class="primary-btn" [disabled]="isJoining" (click)="joinWorkspace()">
+        {{ isJoining ? 'Joining…' : 'Join workspace' }}
       </button>
       <a routerLink="/dashboard" class="secondary-btn">Back to dashboard</a>
     </div>
   </article>
 
-  <ng-template #errorState>
-    <article class="accept-card error-card">
-      <p class="eyebrow">Invitation</p>
-      <h1>Invitation unavailable</h1>
-      <p class="description">{{ error || 'Invitation expired or invalid' }}</p>
-      <a routerLink="/dashboard" class="secondary-btn">Go to dashboard</a>
-    </article>
-  </ng-template>
+  <!-- SUCCESS -->
+  <article class="accept-card" *ngIf="state === 'success'">
+    <p class="eyebrow">Success</p>
+    <h1>You're in!</h1>
+    <p class="feedback success">{{ successMessage }} Redirecting you now…</p>
+  </article>
+
 </section>
