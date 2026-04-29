@@ -20,7 +20,7 @@
 
     <div class="hero-copy">
       <h1>Decision Workspace Dashboard</h1>
-      <p>Manage your workspaces and decisions. Your Slack, GitHub, and JIRA signals live in your <a routerLink="/profile" class="hero-link">Profile</a>.</p>
+      <p>Track active workspaces, Slack conversations, GitHub updates, and JIRA work in one place with clean structure and minimal noise.</p>
     </div>
   </section>
 
@@ -82,4 +82,35 @@
     </section>
   </div>
 
+  <section class="content signals-section">
+    <div class="section-header signals-header">
+      <div class="title-group">
+        <h2>Signals</h2>
+        <app-search-bar class="signals-search"></app-search-bar>
+      </div>
+      <div class="filter-row">
+        <button type="button" class="filter-pill" [class.active]="filters.source === 'all'" (click)="setSourceFilter('all')">All</button>
+        <button type="button" class="filter-pill" [class.active]="filters.source === 'slack'" (click)="setSourceFilter('slack')">Slack</button>
+        <button type="button" class="filter-pill" [class.active]="filters.source === 'github'" (click)="setSourceFilter('github')">GitHub</button>
+        <button type="button" class="filter-pill" [class.active]="filters.source === 'jira'" (click)="setSourceFilter('jira')">JIRA</button>
+        <button type="button" class="filter-pill" [class.active]="filters.status === 'all'" (click)="setStatusFilter('all')">All statuses</button>
+        <button type="button" class="filter-pill" [class.active]="filters.status === 'unread'" (click)="setStatusFilter('unread')">Unread</button>
+      </div>
+    </div>
+    <p class="section-copy">Slack messages, GitHub updates, and JIRA work appear here as action-ready signals.</p>
+
+    <app-signal-board
+      *ngIf="signals.length; else noSignals"
+      [signals]="signals"
+      (markAsRead)="markSignalAsRead($event)"
+      (archive)="archiveSignal($event)"
+    />
+
+    <ng-template #noSignals>
+      <div class="empty-state">
+        <h3>No matching signals</h3>
+        <p>Connect Slack, GitHub, or JIRA in your profile integrations to start pulling messages and assigned work into Sentinent.</p>
+      </div>
+    </ng-template>
+  </section>
 </div>

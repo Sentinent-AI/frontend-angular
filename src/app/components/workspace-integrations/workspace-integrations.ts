@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { IntegrationService } from '../../services/integration.service';
 import { GitHubRepo, SyncStatus } from '../../models/github-integration.model';
@@ -13,7 +13,10 @@ import { AtlassianResource, JiraSyncStatus } from '../../models/jira-integration
   templateUrl: './workspace-integrations.html',
   styleUrl: './workspace-integrations.css'
 })
-export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
+export class WorkspaceIntegrationsComponent implements OnInit, OnChanges, OnDestroy {
+  /** When provided (e.g. embedded in profile), this takes precedence over the route param. */
+  @Input() inputWorkspaceId?: string;
+
   private readonly route = inject(ActivatedRoute);
   private readonly integrationService = inject(IntegrationService);
 
@@ -51,9 +54,16 @@ export class WorkspaceIntegrationsComponent implements OnInit, OnDestroy {
   isJiraSyncing = false;
 
   ngOnInit(): void {
-    this.workspaceId = this.getWorkspaceIdFromRoute() ?? '';
+    this.workspaceId = this.inputWorkspaceId ?? this.getWorkspaceIdFromRoute() ?? '';
     this.loadAllIntegrations();
     window.addEventListener('focus', this.onWindowFocus);
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['inputWorkspaceId'] && !changes['inputWorkspaceId'].firstChange) {
+      this.workspaceId = this.inputWorkspaceId ?? '';
+      this.loadAllIntegrations();
+    }
   }
 
   private getWorkspaceIdFromRoute(): string | null {

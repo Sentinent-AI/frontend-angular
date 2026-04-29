@@ -2,14 +2,14 @@
   <article class="profile-card loading-card">
     <p class="section-kicker">Loading</p>
     <h2>Loading your profile...</h2>
-    <p class="bio-copy">We’re pulling your account details from Sentinent now.</p>
+    <p class="bio-copy">We're pulling your account details from Sentinent now.</p>
   </article>
 </section>
 
 <section class="profile-shell" *ngIf="!isLoading && !profile">
   <article class="profile-card loading-card">
     <p class="section-kicker">Profile unavailable</p>
-    <h2>We couldn’t load this profile yet.</h2>
+    <h2>We couldn't load this profile yet.</h2>
     <p class="bio-copy">{{ errorMessage || 'Try refreshing after the backend is running with the new profile API.' }}</p>
     <div class="hero-actions">
       <button type="button" class="primary-btn" (click)="retryLoadingProfile()">Try again</button>
@@ -167,38 +167,35 @@
     </div>
   </section>
 
-  <section class="signals-section">
-    <div class="signals-header">
-      <div class="signals-title-row">
-        <div>
-          <p class="section-kicker">Live feed</p>
-          <h2 class="signals-heading">Your Signals</h2>
-        </div>
-        <app-search-bar class="signals-search"></app-search-bar>
+  <!-- Integrations section -->
+  <section class="integrations-section" *ngIf="workspaces.length > 0">
+    <div class="integrations-section-header">
+      <div>
+        <p class="section-kicker">Connected accounts</p>
+        <h2 class="integrations-heading">Integrations</h2>
+        <p class="integrations-intro">Connect Slack, GitHub, and Jira to pull your assigned work and team messages into the signals feed.</p>
       </div>
-      <div class="filter-row">
-        <button type="button" class="filter-pill" [class.active]="signalFilters.source === 'all'" (click)="setSourceFilter('all')">All</button>
-        <button type="button" class="filter-pill" [class.active]="signalFilters.source === 'slack'" (click)="setSourceFilter('slack')">Slack</button>
-        <button type="button" class="filter-pill" [class.active]="signalFilters.source === 'github'" (click)="setSourceFilter('github')">GitHub</button>
-        <button type="button" class="filter-pill" [class.active]="signalFilters.source === 'jira'" (click)="setSourceFilter('jira')">JIRA</button>
-        <span class="filter-divider"></span>
-        <button type="button" class="filter-pill" [class.active]="signalFilters.status === 'all'" (click)="setStatusFilter('all')">All statuses</button>
-        <button type="button" class="filter-pill" [class.active]="signalFilters.status === 'unread'" (click)="setStatusFilter('unread')">Unread</button>
+
+      <div class="workspace-selector" *ngIf="workspaces.length > 1">
+        <label class="workspace-selector-label" for="workspaceSelect">Workspace</label>
+        <select id="workspaceSelect" class="workspace-select" (change)="selectWorkspace($any($event.target).value)">
+          <option *ngFor="let ws of workspaces" [value]="ws.id" [selected]="ws.id.toString() === selectedWorkspaceId">
+            {{ ws.name }}
+          </option>
+        </select>
       </div>
     </div>
 
-    <app-signal-board
-      *ngIf="signals.length; else noSignals"
-      [signals]="signals"
-      (markAsRead)="markSignalAsRead($event)"
-      (archive)="archiveSignal($event)"
+    <app-workspace-integrations
+      *ngIf="selectedWorkspaceId"
+      [inputWorkspaceId]="selectedWorkspaceId"
     />
-
-    <ng-template #noSignals>
-      <div class="signals-empty">
-        <p class="signals-empty-title">No signals yet</p>
-        <p class="signals-empty-copy">Connect Slack, GitHub, or JIRA in your workspace integrations to start pulling messages and assigned work into Sentinent.</p>
-      </div>
-    </ng-template>
   </section>
+
+  <div class="integrations-empty" *ngIf="workspaces.length === 0">
+    <p class="section-kicker">Connected accounts</p>
+    <h2 class="integrations-heading">Integrations</h2>
+    <p class="integrations-intro">Create a workspace first to set up your Slack, GitHub, and Jira connections.</p>
+    <a routerLink="/workspace/create" class="primary-btn">Create a workspace</a>
+  </div>
 </section>
