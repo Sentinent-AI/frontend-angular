@@ -5,14 +5,13 @@ import { WorkspaceService } from '../../../services/workspace';
 import { Workspace } from '../../../models/workspace';
 import { WorkspaceMemberService } from '../../../services/workspace-member.service';
 import { WorkspaceMember } from '../../../models/workspace-member.model';
-import { AppNavComponent } from '../../app-nav/app-nav';
 import { Observable } from 'rxjs';
 import { AppNavComponent } from '../../app-nav/app-nav';
 
 @Component({
   selector: 'app-workspace-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, RouterLink, RouterOutlet, AppNavComponent],
+  imports: [CommonModule, RouterModule, RouterLink, RouterOutlet],
   templateUrl: './workspace-details.html',
   styleUrls: ['./workspace-details.css']
 })
