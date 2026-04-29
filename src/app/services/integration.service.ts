@@ -65,27 +65,32 @@ export class IntegrationService {
       switchMap((integrations) => {
         const slackIntegration = integrations.find((integration) => integration.provider === 'slack');
         if (!slackIntegration) {
-          return of({
-            connected: false,
-            channels: [],
-          });
+          return of({ connected: false, channels: [] });
         }
 
+        // Connection is confirmed by the DB record — build the base state first.
         const metadata = this.parseMetadata(slackIntegration.metadata);
-        const params = new HttpParams().set('integration_id', String(slackIntegration.id));
+        const baseState: SlackConnectionState = {
+          connected: true,
+          workspaceName: this.readString(metadata['team_name']),
+          workspaceUrl: this.readString(metadata['team_domain']),
+          channels: [],
+          lastSyncAt: slackIntegration.updated_at ? new Date(slackIntegration.updated_at) : undefined,
+        };
 
+        const params = new HttpParams().set('integration_id', String(slackIntegration.id));
         return this.http.get<SlackChannelsResponse>(`${this.apiUrl}/slack/channels`, { params }).pipe(
           map((response) => ({
-            connected: true,
-            workspaceName: this.readString(metadata['team_name']),
-            workspaceUrl: this.readString(metadata['team_domain']),
+            ...baseState,
             channels: response.channels.map((channel) => ({
               id: channel.id,
               name: channel.name,
               isConnected: this.readStringArray(metadata['selected_channels']).includes(channel.id),
             })),
-            lastSyncAt: slackIntegration.updated_at ? new Date(slackIntegration.updated_at) : undefined,
           })),
+          // If the Slack API call fails, still return connected: true with empty channels
+          // so the UI doesn't flash "disconnected" when the channel list is temporarily unreachable.
+          catchError(() => of(baseState)),
         );
       }),
       catchError((error) => throwError(() => toError(error, 'Unable to load Slack channels.'))),
@@ -159,14 +164,23 @@ export class IntegrationService {
         const selectedRepoIds = this.readNumberArray(metadata['selected_repo_ids']);
         const params = new HttpParams().set('workspace_id', workspaceId);
 
+        // Connection is confirmed by the DB record — build the base state first.
+        const baseState: GitHubConnectionState = {
+          connected: true,
+          repos: [],
+          lastSyncAt: githubIntegration.updated_at ? new Date(githubIntegration.updated_at) : undefined,
+        };
+
         return this.http.get<GitHubRepoResponse[]>(`${this.apiUrl}/github/repos`, { params }).pipe(
           map((repos) => ({
-            connected: true,
+            ...baseState,
             repos: repos.map((repo) => this.mapGitHubRepo(repo, selectedRepoIds)),
             accountName: repos[0]?.owner?.login ?? undefined,
             accountHandle: repos[0]?.owner?.login ? `@${repos[0].owner.login}` : undefined,
-            lastSyncAt: githubIntegration.updated_at ? new Date(githubIntegration.updated_at) : undefined,
           })),
+          // If the GitHub API call fails, still return connected: true with empty repos
+          // so the UI doesn't flash "disconnected" when the repo list is temporarily unreachable.
+          catchError(() => of(baseState)),
         );
       }),
       catchError((error) => throwError(() => toError(error, 'Unable to load GitHub repositories.'))),
@@ -382,7 +396,7 @@ export class IntegrationService {
 
   replyToSlack(workspaceId: string, channelId: string, threadTs: string, text: string): Observable<any> {
     const params = new HttpParams().set('workspace_id', workspaceId);
-    return this.http.post(`${this.apiUrl}/integrations/slack/reply`, {
+    return this.http.post(`${this.apiUrl}/slack/reply`, {
       channel_id: channelId,
       thread_ts: threadTs,
       text: text
