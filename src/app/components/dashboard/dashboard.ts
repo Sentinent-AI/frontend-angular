@@ -23,8 +23,11 @@ export class Dashboard implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
 
   workspaces: Workspace[] = [];
-  signals: Signal[] = [];
+  allSignals: Signal[] = [];       // full list, only filtered by status
+  signals: Signal[] = [];          // allSignals filtered by active source tab
   unreadByWorkspace: Record<number, number> = {};
+  sourceTab: 'all' | 'slack' | 'github' | 'jira' = 'all';
+  showUnreadOnly = false;
   filters: SignalFilters = { source: 'all', status: 'all' };
   githubBanner = '';
   slackBanner = '';
@@ -108,14 +111,19 @@ export class Dashboard implements OnInit, OnDestroy {
     });
   }
 
-  setSourceFilter(source: SignalFilters['source']): void {
-    this.filters = { ...this.filters, source };
+  setSourceTab(tab: typeof this.sourceTab): void {
+    this.sourceTab = tab;
+    this.applyFilters();
+  }
+
+  toggleUnreadOnly(): void {
+    this.showUnreadOnly = !this.showUnreadOnly;
+    this.filters = { ...this.filters, status: this.showUnreadOnly ? 'unread' : 'all' };
     this.loadSignals();
   }
 
-  setStatusFilter(status: SignalFilters['status']): void {
-    this.filters = { ...this.filters, status };
-    this.loadSignals();
+  countFor(source: 'slack' | 'github' | 'jira'): number {
+    return this.allSignals.filter(s => s.sourceType === source).length;
   }
 
   markSignalAsRead(signalId: string): void {
@@ -135,16 +143,26 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   private loadSignals(): void {
-    this.signalService.getSignals(this.filters).subscribe(signals => {
-      this.signals = signals;
+    // Always fetch with status filter only; source filtering is done client-side
+    const fetchFilter: SignalFilters = { source: 'all', status: this.filters.status };
+    this.signalService.getSignals(fetchFilter).subscribe(signals => {
+      this.allSignals = signals;
       this.unreadByWorkspace = signals.reduce<Record<number, number>>((acc, s) => {
         if (s.status === 'unread' && s.workspaceId != null) {
           acc[s.workspaceId] = (acc[s.workspaceId] ?? 0) + 1;
         }
         return acc;
       }, {});
+      this.applyFilters();
       this.cdr.detectChanges();
     });
+  }
+
+  private applyFilters(): void {
+    this.signals = this.sourceTab === 'all'
+      ? this.allSignals
+      : this.allSignals.filter(s => s.sourceType === this.sourceTab);
+    this.cdr.detectChanges();
   }
 
   private showDeleteSuccess(message: string): void {

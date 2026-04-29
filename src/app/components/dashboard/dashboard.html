@@ -74,21 +74,39 @@
   </div>
 
   <section class="content signals-section">
-    <div class="section-header signals-header">
-      <div class="title-group">
+    <div class="signals-header">
+      <div class="signals-title-row">
         <h2>Signals</h2>
-        <app-search-bar class="signals-search"></app-search-bar>
+        <div class="signals-header-right">
+          <app-search-bar class="signals-search"></app-search-bar>
+          <button
+            type="button"
+            class="unread-toggle"
+            [class.active]="showUnreadOnly"
+            (click)="toggleUnreadOnly()"
+          >Unread only</button>
+        </div>
       </div>
-      <div class="filter-row">
-        <button type="button" class="filter-pill" [class.active]="filters.source === 'all'" (click)="setSourceFilter('all')">All</button>
-        <button type="button" class="filter-pill" [class.active]="filters.source === 'slack'" (click)="setSourceFilter('slack')">Slack</button>
-        <button type="button" class="filter-pill" [class.active]="filters.source === 'github'" (click)="setSourceFilter('github')">GitHub</button>
-        <button type="button" class="filter-pill" [class.active]="filters.source === 'jira'" (click)="setSourceFilter('jira')">JIRA</button>
-        <button type="button" class="filter-pill" [class.active]="filters.status === 'all'" (click)="setStatusFilter('all')">All statuses</button>
-        <button type="button" class="filter-pill" [class.active]="filters.status === 'unread'" (click)="setStatusFilter('unread')">Unread</button>
+
+      <div class="signal-tabs" role="tablist">
+        <button type="button" role="tab" class="signal-tab" [class.active]="sourceTab === 'all'" (click)="setSourceTab('all')">
+          All
+          <span class="tab-count">{{ allSignals.length }}</span>
+        </button>
+        <button type="button" role="tab" class="signal-tab" [class.active]="sourceTab === 'slack'" (click)="setSourceTab('slack')">
+          Slack
+          <span class="tab-count" *ngIf="countFor('slack') > 0">{{ countFor('slack') }}</span>
+        </button>
+        <button type="button" role="tab" class="signal-tab" [class.active]="sourceTab === 'github'" (click)="setSourceTab('github')">
+          GitHub
+          <span class="tab-count" *ngIf="countFor('github') > 0">{{ countFor('github') }}</span>
+        </button>
+        <button type="button" role="tab" class="signal-tab" [class.active]="sourceTab === 'jira'" (click)="setSourceTab('jira')">
+          JIRA
+          <span class="tab-count" *ngIf="countFor('jira') > 0">{{ countFor('jira') }}</span>
+        </button>
       </div>
     </div>
-    <p class="section-copy">Slack messages, GitHub updates, and JIRA work appear here as action-ready signals.</p>
 
     <app-signal-board
       *ngIf="signals.length; else noSignals"
