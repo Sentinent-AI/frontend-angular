@@ -166,4 +166,39 @@
       </article>
     </div>
   </section>
+
+  <section class="signals-section">
+    <div class="signals-header">
+      <div class="signals-title-row">
+        <div>
+          <p class="section-kicker">Live feed</p>
+          <h2 class="signals-heading">Your Signals</h2>
+        </div>
+        <app-search-bar class="signals-search"></app-search-bar>
+      </div>
+      <div class="filter-row">
+        <button type="button" class="filter-pill" [class.active]="signalFilters.source === 'all'" (click)="setSourceFilter('all')">All</button>
+        <button type="button" class="filter-pill" [class.active]="signalFilters.source === 'slack'" (click)="setSourceFilter('slack')">Slack</button>
+        <button type="button" class="filter-pill" [class.active]="signalFilters.source === 'github'" (click)="setSourceFilter('github')">GitHub</button>
+        <button type="button" class="filter-pill" [class.active]="signalFilters.source === 'jira'" (click)="setSourceFilter('jira')">JIRA</button>
+        <span class="filter-divider"></span>
+        <button type="button" class="filter-pill" [class.active]="signalFilters.status === 'all'" (click)="setStatusFilter('all')">All statuses</button>
+        <button type="button" class="filter-pill" [class.active]="signalFilters.status === 'unread'" (click)="setStatusFilter('unread')">Unread</button>
+      </div>
+    </div>
+
+    <app-signal-board
+      *ngIf="signals.length; else noSignals"
+      [signals]="signals"
+      (markAsRead)="markSignalAsRead($event)"
+      (archive)="archiveSignal($event)"
+    />
+
+    <ng-template #noSignals>
+      <div class="signals-empty">
+        <p class="signals-empty-title">No signals yet</p>
+        <p class="signals-empty-copy">Connect Slack, GitHub, or JIRA in your workspace integrations to start pulling messages and assigned work into Sentinent.</p>
+      </div>
+    </ng-template>
+  </section>
 </section>

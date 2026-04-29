@@ -96,6 +96,17 @@
   color: rgba(247, 247, 247, 0.75);
 }
 
+.hero-link {
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.hero-link:hover {
+  opacity: 0.82;
+}
+
 .content {
   max-width: 1280px;
   margin: 0 auto;
