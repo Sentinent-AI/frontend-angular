@@ -1,7 +1,9 @@
+<app-nav></app-nav>
+
 <div class="workspace-page" *ngIf="workspace$ | async as workspace; else loading">
   <section class="workspace-hero">
     <div class="hero-head">
-      <a routerLink="/dashboard" class="back-btn">Back to Dashboard</a>
+      <a routerLink="/dashboard" class="back-btn">← Dashboard</a>
       <div class="hero-actions">
         <a [routerLink]="['/workspaces', workspace.id, 'edit']" class="action-btn subtle">Edit Workspace</a>
         <a [routerLink]="['/workspaces', workspace.id, 'decisions', 'new']" class="action-btn">New Decision</a>

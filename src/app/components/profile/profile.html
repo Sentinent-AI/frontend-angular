@@ -1,3 +1,5 @@
+<app-nav></app-nav>
+
 <section class="profile-shell" *ngIf="isLoading">
   <article class="profile-card loading-card">
     <p class="section-kicker">Loading</p>
@@ -32,7 +34,6 @@
     </div>
 
     <div class="hero-actions">
-      <a routerLink="/dashboard" class="secondary-btn">Back to dashboard</a>
       <button *ngIf="!isEditing" type="button" class="primary-btn" (click)="startEditing()">Edit profile</button>
       <button *ngIf="isEditing" type="button" class="secondary-btn" (click)="cancelEditing()">Cancel</button>
     </div>
