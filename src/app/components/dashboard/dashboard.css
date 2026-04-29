@@ -208,6 +208,31 @@
   border-color: rgba(0, 0, 0, 0.15);
 }
 
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.unread-badge {
+  flex-shrink: 0;
+  background: #050505;
+  color: #f7f7f7;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .workspace-card h3 {
   margin: 0 0 8px;
   font-size: 20px;

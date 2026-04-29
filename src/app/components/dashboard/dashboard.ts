@@ -24,6 +24,7 @@ export class Dashboard implements OnInit, OnDestroy {
 
   workspaces: Workspace[] = [];
   signals: Signal[] = [];
+  unreadByWorkspace: Record<number, number> = {};
   filters: SignalFilters = { source: 'all', status: 'all' };
   githubBanner = '';
   slackBanner = '';
@@ -129,9 +130,19 @@ export class Dashboard implements OnInit, OnDestroy {
     return this.pendingDeleteWorkspace?.id === workspace.id;
   }
 
+  unreadCountFor(workspaceId: number): number {
+    return this.unreadByWorkspace[workspaceId] ?? 0;
+  }
+
   private loadSignals(): void {
     this.signalService.getSignals(this.filters).subscribe(signals => {
       this.signals = signals;
+      this.unreadByWorkspace = signals.reduce<Record<number, number>>((acc, s) => {
+        if (s.status === 'unread' && s.workspaceId != null) {
+          acc[s.workspaceId] = (acc[s.workspaceId] ?? 0) + 1;
+        }
+        return acc;
+      }, {});
       this.cdr.detectChanges();
     });
   }

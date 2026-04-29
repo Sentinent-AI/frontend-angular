@@ -23,7 +23,12 @@
 
     <div class="workspace-list" *ngIf="workspaces.length > 0; else empty">
       <article *ngFor="let ws of workspaces" class="workspace-card">
-        <h3>{{ ws.name }}</h3>
+        <div class="card-header">
+          <h3>{{ ws.name }}</h3>
+          <span class="unread-badge" *ngIf="unreadCountFor(ws.id) > 0">
+            {{ unreadCountFor(ws.id) }} unread
+          </span>
+        </div>
         <p>{{ ws.description || 'No description yet.' }}</p>
         <small>Created: {{ ws.createdDate | date: 'mediumDate' }}</small>
         <div class="card-actions">
